@@ -3,9 +3,9 @@
 
 (defclass functional ()
   ()
-  (:documentation "Object implements functional api"))
+  (:documentation "Object implements functional api."))
 
 
 (defclass mutable ()
   ()
-  (:documentation "Object implements mutable api"))
+  (:documentation "Object implements mutable api."))

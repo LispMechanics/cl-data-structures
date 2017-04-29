@@ -17,7 +17,7 @@ Macros
 (defmacro hash-do ((node index &optional (count (gensym)))
                    (root hash break-on-empty &optional (max-depth 10))
                    &body body)
-  "Macro used for writing code going down into hash tree"
+  "Macro used for writing code going down into hash tree."
   (with-gensyms (!pos !block)
     (once-only (hash break-on-empty max-depth)
       `(the node-position
@@ -44,7 +44,7 @@ Macros
 
 
 (defmacro with-hash-tree-functions (container &body body)
-  "Simple macro adding local functions (all forwards to the container closures) "
+  "Simple macro adding local functions (all forwards to the container closures)."
   `(fbind ((equal-fn (read-equal-fn ,container))
            (hash-fn (read-hash-fn ,container)))
      (declare (ignorable (function hash-fn)
