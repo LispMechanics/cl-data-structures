@@ -108,7 +108,6 @@ Constructs and returns new functional-hamt-dictionary object.
                                             bottom)
                                         removed))))
         (values (if removed (make-instance (type-of container)
-                                           :equal-fn (read-equal-fn container)
                                            :hash-fn (read-hash-fn container)
                                            :root new-root
                                            :equal-fn (read-equal-fn container)
@@ -145,7 +144,6 @@ Constructs and returns new functional-hamt-dictionary object.
                                :equal-fn (read-equal-fn container)
                                :hash-fn (read-hash-fn container)
                                :root result
-                               :equal-fn (read-equal-fn container)
                                :max-depth (read-max-depth container))
                 rep
                 old)))))
@@ -200,6 +198,7 @@ Constructs and returns new functional-hamt-dictionary object.
                                        (setf prev-node node
                                              prev-index index))))))
         (setf (access-root container) result)
+        (incf (access-size container))
         container))))
 
 
@@ -233,7 +232,6 @@ Constructs and returns new functional-hamt-dictionary object.
                                    :equal-fn (read-equal-fn container)
                                    :hash-fn (read-hash-fn container)
                                    :root result
-                                   :equal-fn (read-equal-fn container)
                                    :max-depth (read-max-depth container)
                                    :size (1+ (access-size container)))
                     container)
