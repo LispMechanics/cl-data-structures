@@ -20,7 +20,7 @@
 
 
 (defgeneric insert (container location new-value)
-  (:documentation "Non-destructivly insert element into container at location. Will replace element under location if location was already occupied. Essentially purely functional (setf (at container "))
+  (:documentation "Non-destructivly insert element into container at location. Will replace element under location if location was already occupied. Will return next container and second boolean value informing user if element was already in the container. Essentially purely functional (setf (at container "))
 
 
 (defgeneric erase (container location)
@@ -35,11 +35,11 @@
   (:documentation "How many elements container holds currently?"))
 
 
-(defgeneric update (new-value container location)
-  (:documentation "If location is taken in the container, update it. Returns two values, first: container with update location, second: t if update took place, nil otherwise."))
+(defgeneric update (container location new-value)
+  (:documentation "If location is taken in the container, update it. Returns three values, first: container with update location, second: t if update took place; nil otherwise, and previous value."))
 
 
-(defgeneric update! (new-value container location)
+(defgeneric update! (container location new-value)
   (:documentation "Destructive version of update."))
 
 

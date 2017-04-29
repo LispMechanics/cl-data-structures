@@ -162,21 +162,34 @@ Constructs and returns new functional-hamt-dictionary object.
 
 
 (defun functional-hamt-dictionary-insert (container location new-value)
-  (with-hash-tree-functions container
-    (let ((result (insert-into-hash (access-root container)
-                                    (hash-fn location)
-                                    (list location new-value)
-                                    container)))
-      (make-instance (type-of container)
-                     :equal-fn (read-equal-fn container)
-                     :hash-fn (read-hash-fn container)
-                     :root result
-                     :remove-fn (read-remove-fn container)
-                     :last-node-fn (read-last-node-fn container)
-                     :insert-fn (read-insert-fn container)
-                     :equal-fn (read-equal-fn container)
-                     :max-depth (read-max-depth container)
-                     :shallow (read-shallow container)))))
+  (let ((old nil)
+        (rep nil))
+    (with-hash-tree-functions container
+      (let ((result (modify-copy-hamt (access-root container)
+                                      (hash-fn location)
+                                      container
+                                      (lambda (bottom)
+                                        (multiple-value-bind (next-list replaced old-value)
+                                            (insert-or-replace (and bottom (access-conflict bottom))
+                                                               (list* location new-value)
+                                                               :test (read-equal-fn container)
+                                                               :key #'car)
+                                          (setf old (cdr old-value)
+                                                rep replaced)
+                                          (values (make-conflict-node next-list)
+                                                  t))))))
+        (values (make-instance (type-of container)
+                               :equal-fn (read-equal-fn container)
+                               :hash-fn (read-hash-fn container)
+                               :root result
+                               :remove-fn (read-remove-fn container)
+                               :last-node-fn (read-last-node-fn container)
+                               :insert-fn (read-insert-fn container)
+                               :equal-fn (read-equal-fn container)
+                               :max-depth (read-max-depth container)
+                               :shallow (read-shallow container))
+                rep
+                old)))))
 
 
 (defmethod cl-ds:insert ((container functional-hamt-dictionary) location new-value)
@@ -197,20 +210,9 @@ Constructs and returns new functional-hamt-dictionary object.
   (mutable-hamt-dictionary-insert! container location new-value))
 
 
-(defgeneric hash-map (fn obj))
+(defun functional-hamt-dictionary-update (container location new-value)
+  ())
 
 
-(defmethod hash-map (fn (obj functional-hamt-dictionary))
-  (map-hash-tree (lambda (content)
-                   (declare (type conflict-node content))
-                   (with-accessors ((conflict access-conflict)) content
-                     (map nil
-                          (lambda (key.value)
-                            (destructuring-bind (key . value) key.value
-                              (funcall fn key value)))
-                          conflict)))
-                 (access-root obj))
-  obj)
-
-
-
+(defmethod cl-ds:update ((container functional-hamt-dictionary) location new-value)
+  (functional-hamt-dictionary-update container location new-value))

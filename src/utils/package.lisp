@@ -1,18 +1,19 @@
 (defpackage :cl-data-structures.utils
   (:use :common-lisp :iterate :alexandria :serapeum)
-  (:nicknames #:cl-ds.utils)
-  (:shadowing-import-from :iterate :collecting :summing :in))
+  (:nicknames :cl-ds.utils)
+  (:shadowing-import-from :iterate :collecting :summing :in)
+  (:export
+   :lazy-let
+   :with-vectors
+   :bind-lambda
+   :merge-ordered-vectors
+   :cond+
+   :swapop
+   :erase-from-vector
+   :lastpop
+   :cond-compare
+   :insert-or-replace))
 
 
 (in-package :cl-ds.utils)
 
-
-(export 'lazy-let)
-(export 'with-vectors)
-(export 'bind-lambda)
-(export 'merge-ordered-vectors)
-(export 'cond+)
-(export 'swapop)
-(export 'erase-from-vector)
-(export 'lastpop)
-(export 'cond-compare)

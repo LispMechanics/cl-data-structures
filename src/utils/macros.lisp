@@ -105,22 +105,35 @@
       (finally (return result)))))
 
 
+(eval-always
+  (defun generate-if-else (conditions forms)
+    (if conditions
+        (list 'if (car conditions)
+              (if-let ((r (mapcar (lambda (x)
+                                    (destructuring-bind (tests form) x
+                                      (list (cdr tests) form)))
+                                  (remove-if (lambda (x)
+                                               (destructuring-bind ((b . w) form) x
+                                                 (declare (ignore w form))
+                                                 (not b)))
+                                             forms))))
+                (generate-if-else (cdr conditions) r)
+                '(error "Unhalded case!"))
+              (if-let ((r (mapcar (lambda (x)
+                                    (destructuring-bind (tests form) x
+                                      (list (cdr tests) form)))
+                                  (remove-if (lambda (x)
+                                               (destructuring-bind ((b . w) form) x
+                                                 (declare (ignore w form))
+                                                 b))
+                                             forms))))
+                (generate-if-else (cdr conditions) r)
+                '(error "Unhalded case!")))
+        (car (mapcar #'cadr forms)))))
+
+
 (defmacro cond+ (tests &body forms)
-  (let ((l (length tests)))
-    (with-gensyms (!result)
-      `(let ((,!result (~>> 0
-                            ,@(mapcar (lambda (position form)
-                                        `(dpb (if ,form 1 0) (byte 1 ,position)))
-                                      (iota l)
-                                      (reverse tests)))))
-         (cond
-           ,@(mapcar (lambda (x)
-                       (destructuring-bind (test c) x
-                         (unless (eql l (length test))
-                           (error "Not all booleans provided for pattern in expression: ~a" x))
-                         `((eql ,!result ,(to-bits test)) ,c)))
-                     forms)
-           (t (error "No clauses hit")))))))
+   (generate-if-else tests forms))
 
 
 (defmacro cond-compare ((a b) < = >)

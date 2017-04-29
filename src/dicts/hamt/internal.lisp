@@ -130,6 +130,11 @@ Tree structure of HAMT
   (:documentation "Conflict node simply holds list of elements that are conflicting."))
 
 
+(-> make-conflict-node (list) conflict-node)
+(defun make-conflict-node (content)
+  (assure conflict-node (make-instance 'conflict-node :conflict content)))
+
+
 (defclass box-node (bottom-node)
   ((%content :initarg :content
              :reader read-content
@@ -137,14 +142,21 @@ Tree structure of HAMT
   (:documentation "Box node holds only one element inside."))
 
 
-(defgeneric empty-nodep (bottom-node))
+(defgeneric empty-node-p (bottom-node))
 
 
-(defmethod empty-nodep ((node box-node))
+(defgeneric contains-p (bottom-node item fn))
+
+
+(defmethod contains-p ((node conflict-node) item fn)
+  (find item (access-conflict node) :test fn))
+
+
+(defmethod empty-node-p ((node box-node))
   (slot-boundp node '%content))
 
 
-(defmethod empty-nodep ((node conflict-node))
+(defmethod empty-node-p ((node conflict-node))
   (endp (access-conflict node)))
 
 
@@ -295,11 +307,12 @@ Copy nodes and stuff.
                   :content (make-array 1 :initial-element content)))
 
 
-(-> insert-into-hash (maybe-node fixnum t fundamental-hamt-container) hash-node)
-(defun insert-into-hash (root hash item container)
+(-> modify-copy-hamt (maybe-node fixnum fundamental-hamt-container (-> (bottom-node) (values maybe-node boolean)))
+    (values hash-node boolean))
+(defun modify-copy-hamt (root hash container bottom-fn)
   (declare (optimize (speed 3) (debug 0) (safety 0) (compilation-speed 0) (space 0)))
   ;; (declare (optimize debug))
-  (with-hash-tree-functions container
+  (fbind (bottom-fn)
     (flet ((cont (path indexes length) ;path and indexes have constant size BUT only part of it is used, that's why length is passed here
              (declare (type simple-array path indexes)
                       (type fixnum length))
@@ -308,25 +321,28 @@ Copy nodes and stuff.
                (for node = (aref path i))
                (for index = (aref indexes i))
                (for ac initially (let* ((last (aref path (1- length)))
-                                        (bottom-node-or-nil (and (typep last 'bottom-node) last))
-                                        (conflict (insert-fn item bottom-node-or-nil)))
-                                   (if (or (null bottom-node-or-nil)
-                                           (eql length (1- (read-max-depth container)))
-                                           (single-elementp conflict))
-                                       ;;if we didn't find element or element was found but depth was already maximal,
-                                       ;;we will just return element, otherwise attempt to divide (rehash) conflicting node into few more
-                                       conflict
-                                       ;;rehash actually returns cl:hash-table, build-rehashed-node transforms it into another hash-node, depth is increased by 1 this way
-                                       (rebuild-rehashed-node container
-                                                              length
-                                                              (read-max-depth container)
-                                                              conflict)))
+                                        (bottom-node-or-nil (and (typep last 'bottom-node) last)))
+                                   (multiple-value-bind (conflict changed) (bottom-fn bottom-node-or-nil)
+                                     (unless changed
+                                       (return-from modify-copy-hamt (values root nil)))
+                                     (if (or (null bottom-node-or-nil)
+                                             (null conflict)
+                                             (eql length (1- (assure fixnum (read-max-depth container))))
+                                             (single-elementp conflict))
+                                         ;;if we didn't find element or element was found but depth was already maximal,
+                                         ;;we will just return element, otherwise attempt to divide (rehash) conflicting node into few more
+                                         conflict
+                                         ;;rehash actually returns cl:hash-table, build-rehashed-node transforms it into another hash-node, depth is increased by 1 this way
+                                         (rebuild-rehashed-node container
+                                                                length
+                                                                (read-max-depth container)
+                                                                conflict))))
                     then (cond ((and (first-time-p) (null node)) ac) ;no node on path, just use our conflict node
                                ((null node) (build-node index ac)) ;no node, can happen in non shallow trees, in such case, let's just allocate another node.
                                ((typep node 'bottom-node) ac) ;corner case, added conflict or resolved conflict
                                ((hash-node-contains node index) (hash-node-replace-in-the-copy node ac index)) ;replace since it is already here
                                (t (hash-node-insert-into-copy node ac index)))) ;add since it was missing
-               (finally (return ac)))))
+               (finally (return (values ac t))))))
       (declare (dynamic-extent (function cont))
                (inline cont))
       (descend-into-hash root

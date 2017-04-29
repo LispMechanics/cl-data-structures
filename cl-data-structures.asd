@@ -21,6 +21,7 @@
                 :components ((:file "package")
                              (:file "macros")
                              (:file "ordered-algorithms")
+                             (:file "lists")
                              (:file "modification-algorithms")))
                (:module dicts
                 :pathname "src/dicts"
