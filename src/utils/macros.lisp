@@ -129,7 +129,7 @@
                                              forms))))
                 (generate-if-else (cdr conditions) r)
                 '(error "Unhalded case!")))
-        (car (mapcar #'cadr forms)))))
+        (cons 'progn (mapcar #'cadr forms)))))
 
 
 (defmacro cond+ (tests &body forms)
