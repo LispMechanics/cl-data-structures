@@ -77,7 +77,7 @@ Constructs and returns new functional-hamt-dictionary object.
             ((typep node 'bottom-node) (try-find location
                                                  (access-conflict node)
                                                  :test (read-equal-fn container)
-                                                 :key #'car))
+                                                 :list-key #'car))
             (t nil)))
       (values (cdr r)
               f))))
@@ -135,7 +135,8 @@ Constructs and returns new functional-hamt-dictionary object.
                                             (insert-or-replace (and bottom (access-conflict bottom))
                                                                (list* location new-value)
                                                                :test (read-equal-fn container)
-                                                               :key #'car)
+                                                               :list-key #'car
+                                                               :item-key #'car)
                                           (setf old (cdr old-value)
                                                 rep replaced)
                                           (values (make-conflict-node next-list)
@@ -159,7 +160,8 @@ Constructs and returns new functional-hamt-dictionary object.
            (let ((next-list (insert-or-replace (access-conflict node)
                                                (list* location new-value)
                                                :test (read-equal-fn container)
-                                               :key #'car)))
+                                               :list-key #'car
+                                               :item-key #'car)))
              (setf (access-conflict node) next-list)
              node)))
     (with-hash-tree-functions container
@@ -217,7 +219,8 @@ Constructs and returns new functional-hamt-dictionary object.
                                             (insert-or-replace (and bottom (access-conflict bottom))
                                                                (list* location new-value)
                                                                :test (read-equal-fn container)
-                                                               :key #'car)
+                                                               :list-key #'car
+                                                               :item-key #'car)
                                           (setf old (cdr old-value)
                                                 up replaced)
                                           (if replaced
