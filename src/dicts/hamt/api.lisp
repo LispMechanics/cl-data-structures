@@ -180,7 +180,38 @@ Constructs and returns new functional-hamt-dictionary object.
 
 
 (defun functional-hamt-dictionary-update (container location new-value)
-  ())
+  (let ((old nil)
+        (up nil))
+    (with-hash-tree-functions container
+      (let ((result (modify-copy-hamt (access-root container)
+                                      (hash-fn location)
+                                      container
+                                      (lambda (bottom)
+                                        (multiple-value-bind (next-list replaced old-value)
+                                            (insert-or-replace (and bottom (access-conflict bottom))
+                                                               (list* location new-value)
+                                                               :test (read-equal-fn container)
+                                                               :key #'car)
+                                          (setf old (cdr old-value)
+                                                up replaced)
+                                          (if replaced
+                                              (values (make-conflict-node next-list)
+                                                      t)
+                                              (values bottom
+                                                      nil)))))))
+        (values (if up
+                    (make-instance (type-of container)
+                                   :equal-fn (read-equal-fn container)
+                                   :hash-fn (read-hash-fn container)
+                                   :root result
+                                   :remove-fn (read-remove-fn container)
+                                   :last-node-fn (read-last-node-fn container)
+                                   :insert-fn (read-insert-fn container)
+                                   :equal-fn (read-equal-fn container)
+                                   :max-depth (read-max-depth container))
+                    container)
+                up
+                old)))))
 
 
 (defmethod cl-ds:update ((container functional-hamt-dictionary) location new-value)
