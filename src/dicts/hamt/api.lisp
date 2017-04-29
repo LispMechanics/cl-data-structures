@@ -73,12 +73,12 @@ Constructs and returns new functional-hamt-dictionary object.
         (let* ((hash (hash-fn location))
                (root (access-root container))
                (node (hash-do (node index) (root hash))))
-          (cond
-            ((typep node 'bottom-node) (try-find location
-                                                 (access-conflict node)
-                                                 :test (read-equal-fn container)
-                                                 :list-key #'car))
-            (t (values nil nil))))
+          (if (typep node 'bottom-node)
+              (try-find location
+                        (access-conflict node)
+                        :test (read-equal-fn container)
+                        :list-key #'car)
+            (values nil nil)))
       (values (cdr r)
               f))))
 
@@ -241,3 +241,25 @@ Constructs and returns new functional-hamt-dictionary object.
 
 (defmethod cl-ds:update ((container functional-hamt-dictionary) location new-value)
   (functional-hamt-dictionary-update container location new-value))
+
+
+(defun mutable-hamt-dictionary-update! (container location new-value)
+  (with-hash-tree-functions container
+    (multiple-value-bind (r f)
+        (let* ((hash (hash-fn location))
+               (root (access-root container))
+               (node (hash-do (node index) (root hash))))
+          (if (typep node 'bottom-node)
+              (try-find location
+                        (access-conflict node)
+                        :test (read-equal-fn container)
+                        :list-key #'car)
+              (values nil nil)))
+      (let ((old-value (cdr r)))
+        (when f
+          (setf (cdr r) new-value))
+        (values container f old-value)))))
+
+
+(defmethod cl-ds:update! ((container mutable-hamt-dictionary) location new-value)
+  (mutable-hamt-dictionary-update! container location new-value))

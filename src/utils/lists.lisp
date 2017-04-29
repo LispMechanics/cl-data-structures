@@ -36,15 +36,22 @@
     (finally (return (values result removed)))))
 
 
-(defun try-find (item list &key (test #'eql) (list-key #'identity) (item-key #'identity))
+(defun try-find-cell (item list &key (test #'eql) (list-key #'identity) (item-key #'identity))
   (let ((r nil)
         (f nil))
     (iterate
-      (for elt in list)
+      (for elt on list)
       (when (funcall test
-                     (funcall list-key elt)
+                     (funcall list-key (car elt))
                      (funcall item-key item))
         (setf r elt
               f t)
         (leave)))
     (values r f)))
+
+
+(defun try-find (item list &key (test #'eql) (list-key #'identity) (item-key #'identity))
+  (multiple-value-bind (r f) (try-find-cell item list test list-key item-key)
+    (values (car r)
+            f)))
+
