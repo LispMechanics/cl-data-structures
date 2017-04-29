@@ -8,9 +8,9 @@
 
 (defclass functional (fundamental-container)
   ()
-  (:documentation "Object implements functional api"))
+  (:documentation "Object implements functional api."))
 
 
 (defclass mutable (fundamental-container)
   ()
-  (:documentation "Object implements mutable api"))
+  (:documentation "Object implements mutable api."))

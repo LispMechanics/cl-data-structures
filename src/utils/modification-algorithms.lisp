@@ -23,7 +23,7 @@
 
 (-> swapop ((AND VECTOR (NOT SIMPLE-ARRAY)) index) vector)
 (defun swapop (vector index)
-  "Swaps element under index with last element. Pops last element and returns vector.
+  "Swaps element under INDEX with last element. Pops last element and returns VECTOR.
    :values and parameters"
   (unless (zerop (fill-pointer vector))
     (rotatef (aref vector (1- (fill-pointer vector)))
