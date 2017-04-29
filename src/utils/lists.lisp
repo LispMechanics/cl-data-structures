@@ -23,7 +23,7 @@
     (values (cons element set) nil nil)))
 
 
-(-> try-remove (t list &key (:test (-> (t t) boolean)) (:list-key (-> (t) t)) (:item-key (-> (t) t))) (values list boolean))
+(-> try-remove (t list &key (:test (-> (t t) boolean)) (:list-key (-> (t) t)) (:item-key (-> (t) t))) (values list boolean t))
 (defun try-remove (item list &key (test #'eql) (list-key #'identity) (item-key #'identity))
   (iterate
     (for elt in list)
