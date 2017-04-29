@@ -22,3 +22,15 @@
                       (return-from insert-or-replace (values result t elt))))))
     (values (cons element set) nil nil)))
 
+
+(-> try-remove (t list &key (:test (-> (t t) boolean)) (:key (-> (t) t))) list)
+(defun try-remove (item list &key (test #'eql) (key #'identity))
+  (iterate
+    (for elt in list)
+    (with removed = nil)
+    (if (funcall test
+                 (funcall key elt)
+                 item)
+        (setf removed t)
+        (collect elt into result at start))
+    (finally (return (values result removed)))))

@@ -12,7 +12,8 @@
    :erase-from-vector
    :lastpop
    :cond-compare
-   :insert-or-replace))
+   :insert-or-replace
+   :try-remove))
 
 
 (in-package :cl-ds.utils)

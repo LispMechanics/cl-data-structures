@@ -1,48 +1,6 @@
 (in-package :cl-ds.dicts.hamt)
 
 
-(defclass fundamental-hamt-container (cl-ds:fundamental-container)
-  ((%root :type (or hash-node bottom-node null)
-          :accessor access-root
-          :initarg :root
-          :documentation "Hash node pointing to root of the whole hash tree.")
-   (%hash-fn :type (-> (x) fixnum)
-             :reader read-hash-fn
-             :initarg :hash-fn
-             :documentation "Closure used for key hashing. Setted by the user.")
-   (%remove-fn :type (-> (item bottom-node (-> t t) boolean) (values bottom-node boolean))
-               :reader read-remove-fn
-               :initarg :remove-fn
-               :documentation "Closure used for removing items from bottom level lists. @b(Not) exposed in any way to user.")
-   (%last-node-fn :type (-> (item t equal) t)
-                  :reader read-last-node-fn
-                  :initarg :last-node-fn
-                  :documentation "Closure used for finding items in the bottom node")
-   (%insert-fn :type (-> (item t (-> (t t) boolean)) list)
-               :reader read-insert-fn
-               :initarg :insert-fn
-               :documentation "Closure used for adding new item into bottom level lists. @b(Not) exposed in any way to user.")
-   (%equal-fn :type (-> (t t) boolean)
-              :reader read-equal-fn
-              :initarg :equal-fn
-              :documentation "Closure used for comparing items at the bottom level lists.")
-   (%max-depth :initarg :max-depth
-               :type (integer 0 10)
-               :reader read-max-depth
-               :documentation "Maximal depth of tree.")
-   (%shallow :initarg :shallow
-             :type boolean
-             :reader read-shallow
-             :initform t
-             :documentation "If set to nil, depth will be always maximal"))
-  (:documentation "Base class of other containers. Acts as any container for bunch of closures (those vary depending on the concrete container) and root of the tree."))
-
-
-(defclass hamt-dictionary (fundamental-hamt-container
-                           cl-ds.dicts:dictionary)
-  ())
-
-
 (defclass functional-hamt-dictionary (hamt-dictionary
                                       cl-ds:functional)
   ())
@@ -55,9 +13,9 @@
 
 (-> make-functional-hamt-dictionary ((-> (t) fixnum)
                                      (-> (t t) boolean)
-                                     &key (:max-depth positive-fixnum) (:shallow boolean))
+                                     &key (:max-depth positive-fixnum))
     functional-hamt-dictionary)
-(defun make-functional-hamt-dictionary (hash-fn equal-fn &key (max-depth 8) (shallow t))
+(defun make-functional-hamt-dictionary (hash-fn equal-fn &key (max-depth 8))
 "
 @b(Arguments and Values:)
 
@@ -74,7 +32,6 @@ Constructs and returns new functional-hamt-dictionary object.
                  :hash-fn hash-fn
                  :root nil
                  :max-depth max-depth
-                 :shallow shallow
                  :remove-fn (lambda (item node equal) (declare (type conflict-node node)
                                                                (type (-> (t t) boolean)))
                               (multiple-value-bind (result removed)
@@ -137,24 +94,37 @@ Constructs and returns new functional-hamt-dictionary object.
 
 
 (-> functional-hamt-dictionary-erase (functional-hamt-dictionary t) (values functional-hamt-dictionary boolean))
-(defun functional-hamt-dictionary-erase (dict location)
-  (with-hash-tree-functions container
-    (multiple-value-bind (new-root removed)
-        (remove-from-hash (access-root container)
-                          (hash-fn location)
-                          location
-                          container)
-      (values (make-instance (type-of container)
-                             :equal-fn (read-equal-fn container)
-                             :hash-fn (read-hash-fn container)
-                             :root new-root
-                             :remove-fn (read-remove-fn container)
-                             :last-node-fn (read-last-node-fn container)
-                             :insert-fn (read-insert-fn container)
-                             :equal-fn (read-equal-fn container)
-                             :max-depth (read-max-depth container)
-                             :shallow (read-shallow container))
-              removed))))
+(defun functional-hamt-dictionary-erase (container location)
+  (let ((old-value nil))
+    (with-hash-tree-functions container
+      (multiple-value-bind (new-root removed)
+          (modify-copy-hamt (access-root container)
+                            (hash-fn location)
+                            container
+                            (lambda (bottom)
+                              (multiple-value-bind (list removed)
+                                  (try-remove location
+                                              (and bottom (access-conflict bottom))
+                                              :test (lambda (ex r)
+                                                      (when-let ((result (equal-fn (car ex) r)))
+                                                        (setf old-value (cdr ex))
+                                                        result)))
+                                (values (if removed
+                                            (and list (make-conflict-node list))
+                                            bottom)
+                                        removed))))
+        (values (if removed (make-instance (type-of container)
+                                           :equal-fn (read-equal-fn container)
+                                           :hash-fn (read-hash-fn container)
+                                           :root new-root
+                                           :remove-fn (read-remove-fn container)
+                                           :last-node-fn (read-last-node-fn container)
+                                           :insert-fn (read-insert-fn container)
+                                           :equal-fn (read-equal-fn container)
+                                           :max-depth (read-max-depth container))
+                    container)
+                removed
+                old-value)))))
 
 
 (defmethod cl-ds:erase ((container functional-hamt-dictionary) location)
@@ -186,8 +156,7 @@ Constructs and returns new functional-hamt-dictionary object.
                                :last-node-fn (read-last-node-fn container)
                                :insert-fn (read-insert-fn container)
                                :equal-fn (read-equal-fn container)
-                               :max-depth (read-max-depth container)
-                               :shallow (read-shallow container))
+                               :max-depth (read-max-depth container))
                 rep
                 old)))))
 

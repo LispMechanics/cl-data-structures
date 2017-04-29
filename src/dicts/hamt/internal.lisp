@@ -28,11 +28,11 @@ Macros
 |#
 
 (defmacro hash-do ((node index &optional (count (gensym)))
-                   (root hash break-on-empty &optional (max-depth 10))
+                   (root hash &optional (max-depth 10))
                    &body body)
   "Macro used for writing code going down into hash tree"
   (with-gensyms (!pos !block)
-    (once-only (hash break-on-empty max-depth)
+    (once-only (hash max-depth)
       `(the node-position
          (block ,!block
            (assert (<= ,max-depth 10))
@@ -49,7 +49,7 @@ Macros
              (declare (type fixnum ,hash ,!pos ,index ,count))
              (progn
                ,@body
-               (when (or (and (null ,node) ,break-on-empty)
+               (when (or (null ,node) 
                          (typep ,node 'bottom-node))
                  (return-from ,!block
                    (values ,node
@@ -80,7 +80,7 @@ Macros
        ,@body)))
 
 
-(defmacro descend-into-hash (root max-depth hash final-fn &optional break-on-absent)
+(defmacro descend-into-hash (root max-depth hash final-fn)
   "Go into hamt, storing nodes into two stack allocated arrays. Pass those into supplied function. Macro so it is always inlined.
    @b(Arguments and values)
    @begin(list)
@@ -96,7 +96,7 @@ Macros
                 (dynamic-extent path indexes depth))
        (hash-do
            (node index i)
-           (,root ,hash ,break-on-absent ,max-depth)
+           (,root ,hash ,max-depth)
          (setf (aref path i) node
                (aref indexes i) index)
          (incf depth))
@@ -108,6 +108,7 @@ Macros
 Tree structure of HAMT
 
 |#
+
 
 (defstruct hash-node
   (mask 0 :type (unsigned-byte 64))
@@ -161,6 +162,49 @@ Tree structure of HAMT
 
 
 (define-constant +hash-level+ 6)
+
+#|
+
+Interface class.
+
+|#
+
+(defclass fundamental-hamt-container (cl-ds:fundamental-container)
+  ((%root :type (or hash-node bottom-node null)
+          :accessor access-root
+          :initarg :root
+          :documentation "Hash node pointing to root of the whole hash tree.")
+   (%hash-fn :type (-> (x) fixnum)
+             :reader read-hash-fn
+             :initarg :hash-fn
+             :documentation "Closure used for key hashing. Setted by the user.")
+   (%remove-fn :type (-> (item bottom-node (-> t t) boolean) (values bottom-node boolean))
+               :reader read-remove-fn
+               :initarg :remove-fn
+               :documentation "Closure used for removing items from bottom level lists. @b(Not) exposed in any way to user.")
+   (%last-node-fn :type (-> (item t equal) t)
+                  :reader read-last-node-fn
+                  :initarg :last-node-fn
+                  :documentation "Closure used for finding items in the bottom node")
+   (%insert-fn :type (-> (item t (-> (t t) boolean)) list)
+               :reader read-insert-fn
+               :initarg :insert-fn
+               :documentation "Closure used for adding new item into bottom level lists. @b(Not) exposed in any way to user.")
+   (%equal-fn :type (-> (t t) boolean)
+              :reader read-equal-fn
+              :initarg :equal-fn
+              :documentation "Closure used for comparing items at the bottom level lists.")
+   (%max-depth :initarg :max-depth
+               :type (integer 0 10)
+               :reader read-max-depth
+               :documentation "Maximal depth of tree."))
+  (:documentation "Base class of other containers. Acts as any container for bunch of closures (those vary depending on the concrete container) and root of the tree."))
+
+
+(defclass hamt-dictionary (fundamental-hamt-container
+                           cl-ds.dicts:dictionary)
+  ())
+
 
 #|
 
@@ -337,19 +381,21 @@ Copy nodes and stuff.
                                                                 length
                                                                 (read-max-depth container)
                                                                 conflict))))
-                    then (cond ((and (first-time-p) (null node)) ac) ;no node on path, just use our conflict node
-                               ((null node) (build-node index ac)) ;no node, can happen in non shallow trees, in such case, let's just allocate another node.
+                    then (cond ((null node) ac) ;no node on path, just use our conflict node
                                ((typep node 'bottom-node) ac) ;corner case, added conflict or resolved conflict
-                               ((hash-node-contains node index) (hash-node-replace-in-the-copy node ac index)) ;replace since it is already here
-                               (t (hash-node-insert-into-copy node ac index)))) ;add since it was missing
+                               (ac (if (hash-node-contains node index)
+                                       (hash-node-replace-in-the-copy node ac index)
+                                       (hash-node-insert-into-copy node ac index)))
+                               (t (if (eql 1 (hash-node-size node))
+                                      ac
+                                      (hash-node-remove-from-the-copy node index)))))
                (finally (return (values ac t))))))
       (declare (dynamic-extent (function cont))
                (inline cont))
       (descend-into-hash root
                          (read-max-depth container)
                          hash
-                         cont
-                         (read-shallow container)))))
+                         cont))))
 
 
 (defun hash-node-insert! (node index content)
@@ -392,7 +438,7 @@ Copy nodes and stuff.
   (let ((prev-node nil)
         (prev-index 0))
     (with-hash-tree-functions container
-      (hash-do (node index c) (root hash t)
+      (hash-do (node index c) (root hash)
         (symbol-macrolet ((just-node (unless (hash-node-contains node index)
                                        (return-from insert-into-hash!
                                          (progn
@@ -446,42 +492,6 @@ Copy nodes and stuff.
            (make-hash-node :mask new-mask :content new-array)))))
 
 
-(-> remove-from-hash (maybe-node fixnum t fundamental-hamt-container) (values maybe-node boolean))
-(defun remove-from-hash (root hash item container)
-  (declare (optimize (speed 3) (debug 0) (safety 0) (compilation-speed 0) (space 0))) ;very fast
-  (with-hash-tree-functions container
-    (flet ((cont (path indexes length)
-             (declare (type simple-array path indexes)
-                      (fixnum length))
-             (if (not (zerop length))
-                 (if-let ((last-node (aref path (1- length)))) ;if last-node = nil we didn't even found item in tree, so we will just return root
-                   (if (typep last-node 'bottom-node) ;otherwise, item was not found
-                       (let ((conf (remove-fn item last-node))) ;try removing
-                         (if (eq conf last-node) ;nothing was removed
-                             (values root nil) ;so just return root
-                             (iterate
-                               (for i from (- length 2) downto 0) ;without last node, because we already processed it
-                               (for node = (aref path i))
-                               (for index = (aref indexes i))
-                               (for ac initially conf ;starting with new bottom node
-                                    then (cond (ac (hash-node-replace-in-the-copy node ac index)) ;ac can be nil when we recursivly remove nodes (see line below)
-                                               ((eql 1 (hash-node-size node)) ac) ;node does contain just one item but we remove that one item, so we remove whole node as well
-                                               (t (hash-node-remove-from-the-copy node index)))) ;otherwise, just create copy of node, but without old item
-                               (finally (return (values ac t))))))
-                       (values root nil))
-                   (values root nil))
-                 (values root nil))))
-      (declare (dynamic-extent (function cont))
-               (inline cont))
-      (multiple-value-bind (new-root removed)
-          (descend-into-hash root
-                             (read-max-depth container)
-                             hash
-                             cont
-                             t)
-        (values new-root removed)))))
-
-
 (-> find-in-hash (hash-node fixnum t fundamental-hamt-container) (values t boolean))
 (defun find-in-hash (root hash item container)
   "Obtain nodes in loop until node is missing or bottom-node was found
@@ -492,23 +502,11 @@ Copy nodes and stuff.
     @item(container -- used for stored functions)"
   (declare (optimize (speed 3) (debug 0) (safety 0) (compilation-speed 0) (space 0)))
   (with-hash-tree-functions container
-    (let ((node (hash-do (node index) (root hash t))))
+    (let ((node (hash-do (node index) (root hash))))
       (cond
         ((typep node 'bottom-node) (values (last-node-fn item node) t))
         (t nil)))))
 
-
-(-> try-remove (t list &key (:test (-> (t t) boolean)) (:key (-> (t) t))) list)
-(defun try-remove (item list &key (test #'eql) (key #'identity))
-  (iterate
-    (for elt in list)
-    (with removed = nil)
-    (if (funcall test
-                 (funcall key elt)
-                 item)
-        (setf removed t)
-        (collect elt into result))
-    (finally (return (values result removed)))))
 
 
 (-> map-hash-tree ((-> (bottom-node) t) hash-node) hash-node)
@@ -554,7 +552,7 @@ Copy nodes and stuff.
         hash-fn)))
 
 
-(defmethod rehash ((container functional-hamt-dictionary) conflict level)
+(defmethod rehash ((container hamt-dictionary) conflict level)
   (declare (type conflict-node conflict))
   (let ((result (make-hash-table))
         (byte (byte +hash-level+ (* +hash-level+ level))))
