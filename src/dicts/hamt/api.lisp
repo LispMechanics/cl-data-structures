@@ -78,7 +78,7 @@ Constructs and returns new functional-hamt-dictionary object.
                                                  (access-conflict node)
                                                  :test (read-equal-fn container)
                                                  :list-key #'car))
-            (t nil)))
+            (t (values nil nil))))
       (values (cdr r)
               f))))
 
