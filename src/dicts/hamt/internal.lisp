@@ -1,5 +1,10 @@
-(in-package :cl-data-structures.dicts)
+(in-package :cl-ds.dicts.hamt)
 
+#|
+
+Basic types
+
+|#
 
 (deftype maybe-node ()
   `(or null hash-node bottom-node))
@@ -7,6 +12,14 @@
 
 (deftype node-position ()
   `(values maybe-node fixnum))
+
+
+(deftype hash-node-index ()
+  `(integer 0 63))
+
+
+(deftype just-node ()
+  `(or hash-node bottom-node))
 
 #|
 
@@ -67,20 +80,34 @@ Macros
        ,@body)))
 
 
+(defmacro descend-into-hash (root max-depth hash final-fn &optional break-on-absent)
+  "Go into hamt, storing nodes into two stack allocated arrays. Pass those into supplied function. Macro so it is always inlined.
+   @b(Arguments and values)
+   @begin(list)
+     @item(root -- node where we are starting descending)
+     @item(max-depth -- how many nodes we are going to scan at most? @b(Must) be lower than 11).
+     @item(break-on-absent -- control behavior when node is not present in the hamt. Either break and return, or go into filling indexes with positions where nodes should be until reaching maximal depth.)
+   @end(list)"
+  (once-only (max-depth)
+    `(let ((path (make-array 10))
+           (indexes (make-array ,max-depth :element-type 'fixnum))
+           (depth 0))
+       (declare (type fixnum depth)
+                (dynamic-extent path indexes depth))
+       (hash-do
+           (node index i)
+           (,root ,hash ,break-on-absent ,max-depth)
+         (setf (aref path i) node
+               (aref indexes i) index)
+         (incf depth))
+       (,final-fn path indexes depth)))) ;finally, pass data into function. Depth informs user about how many nodes was really scanned.
+
+
 #|
 
-Persitant hash table (like in Clojure)
+Tree structure of HAMT
 
 |#
-
-
-(deftype hash-node-index ()
-  `(integer 0 63))
-
-
-(deftype just-node ()
-  `(or hash-node bottom-node))
-
 
 (defstruct hash-node
   (mask 0 :type (unsigned-byte 64))
@@ -123,6 +150,11 @@ Persitant hash table (like in Clojure)
 
 (define-constant +hash-level+ 6)
 
+#|
+
+Functions with basic bit logic.
+
+|#
 
 (-> hash-node-to-masked-index (hash-node (hash-node-index)) hash-node-index)
 (defun hash-node-to-masked-index (hash-node index)
@@ -162,6 +194,11 @@ Persitant hash table (like in Clojure)
 (defun hash-node-size (node)
   (logcount (hash-node-mask node)))
 
+#|
+
+Copy nodes and stuff.
+
+|#
 
 (-> hash-node-replace-in-the-copy (hash-node t hash-node-index) hash-node)
 (defun hash-node-replace-in-the-copy (hash-node item index)
@@ -207,29 +244,6 @@ Persitant hash table (like in Clojure)
                     :content new-array)))
 
 
-(defmacro descend-into-hash (root max-depth hash final-fn &optional break-on-absent)
-  "Go into hamt, storing nodes into two stack allocated arrays. Pass those into supplied function. Macro so it is always inlined.
-   @b(Arguments and values)
-   @begin(list)
-     @item(root -- node where we are starting descending)
-     @item(max-depth -- how many nodes we are going to scan at most? @b(Must) be lower than 11).
-     @item(break-on-absent -- control behavior when node is not present in the hamt. Either break and return, or go into filling indexes with positions where nodes should be until reaching maximal depth.)
-   @end(list)"
-  (once-only (max-depth)
-    `(let ((path (make-array 10))
-           (indexes (make-array ,max-depth :element-type 'fixnum))
-           (depth 0))
-       (declare (type fixnum depth)
-                (dynamic-extent path indexes depth))
-       (hash-do
-           (node index i)
-           (,root ,hash ,break-on-absent ,max-depth)
-         (setf (aref path i) node
-               (aref indexes i) index)
-         (incf depth))
-       (,final-fn path indexes depth)))) ;finally, pass data into function. Depth informs user about how many nodes was really scanned.
-
-
 (defun non-empty-hash-table-p (table)
   (and (typep table 'hash-table)
        (not (zerop (hash-table-count table)))))
@@ -247,8 +261,8 @@ Persitant hash table (like in Clojure)
   (:documentation "Checks if conflict node holds just a single element. Returns t if it does, returns nil if it does not."))
 
 
-(-> rebuild-rehashed-node (fundamental-hash-tree-container fixnum fixnum bottom-node) just-node)
-(-> build-rehashed-node (fundamental-hash-tree-container fixnum fixnum hash-table) just-node)
+(-> rebuild-rehashed-node (fundamental-hamt-container fixnum fixnum bottom-node) just-node)
+(-> build-rehashed-node (fundamental-hamt-container fixnum fixnum hash-table) just-node)
 (defun build-rehashed-node (container depth max-depth content)
   (let ((array (make-array (hash-table-count content)))
         (mask 0))
@@ -281,7 +295,7 @@ Persitant hash table (like in Clojure)
                   :content (make-array 1 :initial-element content)))
 
 
-(-> insert-into-hash (maybe-node fixnum t fundamental-hash-tree-container) hash-node)
+(-> insert-into-hash (maybe-node fixnum t fundamental-hamt-container) hash-node)
 (defun insert-into-hash (root hash item container)
   (declare (optimize (speed 3) (debug 0) (safety 0) (compilation-speed 0) (space 0)))
   ;; (declare (optimize debug))
@@ -357,7 +371,7 @@ Persitant hash table (like in Clojure)
   node)
 
 
-(-> insert-into-hash! (maybe-node fixnum t fundamental-hash-tree-container) hash-node)
+(-> insert-into-hash! (maybe-node fixnum t fundamental-hamt-container) hash-node)
 (defun insert-into-hash! (root hash item container)
   (let ((prev-node nil)
         (prev-index 0))
@@ -416,7 +430,7 @@ Persitant hash table (like in Clojure)
            (make-hash-node :mask new-mask :content new-array)))))
 
 
-(-> remove-from-hash (maybe-node fixnum t fundamental-hash-tree-container) (values maybe-node boolean))
+(-> remove-from-hash (maybe-node fixnum t fundamental-hamt-container) (values maybe-node boolean))
 (defun remove-from-hash (root hash item container)
   (declare (optimize (speed 3) (debug 0) (safety 0) (compilation-speed 0) (space 0))) ;very fast
   (with-hash-tree-functions container
@@ -452,7 +466,7 @@ Persitant hash table (like in Clojure)
         (values new-root removed)))))
 
 
-(-> find-in-hash (hash-node fixnum t fundamental-hash-tree-container) (values t boolean))
+(-> find-in-hash (hash-node fixnum t fundamental-hamt-container) (values t boolean))
 (defun find-in-hash (root hash item container)
   "Obtain nodes in loop until node is missing or bottom-node was found
    @b(Arguments and values)
@@ -479,236 +493,6 @@ Persitant hash table (like in Clojure)
         (setf removed t)
         (collect elt into result))
     (finally (return (values result removed)))))
-
-
-(defclass fundamental-hash-tree-container ()
-  ((%root :type (or hash-node bottom-node null)
-          :accessor access-root
-          :initarg :root
-          :documentation "Hash node pointing to root of the whole hash tree.")
-   (%hash-fn :type (-> (x) fixnum)
-             :reader read-hash-fn
-             :initarg :hash-fn
-             :documentation "Closure used for key hashing. Setted by the user.")
-   (%remove-fn :type (-> (item bottom-node (-> t t) boolean) (values bottom-node boolean))
-               :reader read-remove-fn
-               :initarg :remove-fn
-               :documentation "Closure used for removing items from bottom level lists. @b(Not) exposed in any way to user.")
-   (%last-node-fn :type (-> (item t equal) t)
-                  :reader read-last-node-fn
-                  :initarg :last-node-fn
-                  :documentation "Closure used for finding items in the bottom node")
-   (%insert-fn :type (-> (item t (-> (t t) boolean)) list)
-               :reader read-insert-fn
-               :initarg :insert-fn
-               :documentation "Closure used for adding new item into bottom level lists. @b(Not) exposed in any way to user.")
-   (%equal-fn :type (-> (t t) boolean)
-              :reader read-equal-fn
-              :initarg :equal-fn
-              :documentation "Closure used for comparing items at the bottom level lists.")
-   (%max-depth :initarg :max-depth
-               :type (integer 0 10)
-               :reader read-max-depth
-               :documentation "Maximal depth of tree.")
-   (%shallow :initarg :shallow
-             :type boolean
-             :reader read-shallow
-             :initform t
-             :documentation "If set to nil, depth will be always maximal"))
-  (:documentation "Base class of other containers. Acts as any container for bunch of closures (those vary depending on the concrete container) and root of the tree."))
-
-
-(defgeneric hash-find (container item)
-  (:documentation "
- @b(Arguments and Values:)
- @begin(list)
-  @item(container -- container in which we are seeking for any item)
-  @item(item -- item that we are looking for)
- @end(list)
-  @b(Description:)
-  Try to find item in the container. Implementations of this generic function always return two values. First value returned is item found in the container (or nil if it could not be found).
-  Second value is information if item was found in the container (t if yes, nil otherwise).
-  @b(Side Effects:)
-  None.
-  @b(Notes:)
-  Dictionary implementaions expect you to pass key as a item."))
-
-
-(defgeneric hash-remove (container item)
-  (:documentation "
- @b(Arguments and Values:)
- @begin(list)
-  @item(container -- container from which we are removing item)
-  @item(item -- item that will be removed from container)
- @end(list)
-
- @b(Description:)
- Removes from the container. Original container is not altered, new container is created, without item. If container does not contain item no error will be singaled.
- @b(Side Effects:)
- None.
- @b(Notes:)
- Dictionary implementations actually expect you to pass just a key, not whole pair as item.
-"))
-
-
-(defgeneric hash-insert (container item)
-  (:documentation "
- @b(Arguments and Values:)
- @begin(list)
-  @item(container -- container into which item is inserted)
-  @item(item -- item that should be inserted into container)
- @end(list)
- @b(Description:)
- Inserts item into container. Original container is not altered. Type of item may be restriced by concrete implementation.
- @b(Side effects:)
- None.
- @b(Exceptional situations:)
- Some implementations (namely dictionary) place restrictions on item. Passing invalid item may signal error."))
-
-
-(defgeneric hash-insert! (container item)
-  (:documentation "
-@b(Description:)
-Destructive wariant of insert."))
-
-
-(defclass functional-dictionary (fundamental-hash-tree-container)
-  ())
-
-
-(-> make-functional-dictionary ((-> (t) fixnum)
-                                (-> (t t) boolean)
-                                &key (:max-depth positive-fixnum) (:shallow boolean))
-    functional-dictionary)
-(defun make-functional-dictionary (hash-fn equal-fn &key (max-depth 8) (shallow t))
-"
-@b(Arguments and Values:)
-
-@begin(list)
-@item(hash-fn -- function that will be used to hash keys. Should return fixnum.)
-@item(equal-fn -- function that will be used to resolve hash conflicts.)
-@end(list)
-
-@b(Description:)
-Constructs and returns new functional-dictionary object.
-"
-  (make-instance 'functional-dictionary
-                 :equal-fn equal-fn
-                 :hash-fn hash-fn
-                 :root nil
-                 :max-depth max-depth
-                 :shallow shallow
-                 :remove-fn (lambda (item node equal) (declare (type conflict-node node)
-                                                               (type (-> (t t) boolean)))
-                              (multiple-value-bind (result removed)
-                                  (try-remove item
-                                              (access-conflict node)
-                                              :test equal
-                                              :key #'car)
-                                (values (cond ((null result) nil)
-                                              (removed (make-instance 'conflict-node
-                                                                      :conflict result))
-                                              (t node))
-                                        removed)))
-                 :last-node-fn (lambda (item node equal)
-                                 (find item (access-conflict node) :key #'car :test equal))
-                 :insert-fn (lambda (item node equal)
-                              (declare (ignore equal))
-                              (make-instance 'conflict-node
-                                             :conflict (cons item (when node (access-conflict node)))))
-                 :equal-fn equal-fn))
-
-
-
-(-> make-functional-key-tree-container ((-> (t) fixnum)
-                                        positive-fixnum
-                                        &key (:max-depth positive-fixnum) (:shallow boolean))
-    functional-key-tree-container)
-(let ((empty-box (make-instance 'box-node))) ;default node, avoid allocating empty nodes without reason
-  (defun make-functional-key-tree-container (hash-fn &key (max-depth 8) (shallow t))
-    (make-instance 'functional-key-tree-container
-                   :equal-fn #'eq
-                   :hash-fn hash-fn
-                   :max-depth max-depth
-                   :root (make-instance 'hash-node)
-                   :shallow shallow
-                   :remove-fn (lambda (item node equal) (declare (ignore node equal item))
-                                (values empty-box t))
-                   :last-node-fn (lambda (item node equal)
-                                   (declare (ignore item equal))
-                                   (read-content node))
-                   :insert-fn (lambda (item node equal) (declare (ignore node equal))
-                                (make-instance 'box-node
-                                               :content (cadr item))))))
-
-
-(defmethod hash-find ((container functional-dictionary) item)
-  (with-hash-tree-functions container
-    (multiple-value-bind (r f)
-        (find-in-hash (access-root container)
-                      (hash-fn item)
-                      item
-                      container)
-      (values (cdr r)
-              f))))
-
-
-
-(defmethod hash-insert-with-hash ((container fundamental-hash-tree-container) item hash)
-  (declare (type fixnum hash))
-  (insert-into-hash (access-root container)
-                    hash
-                    item
-                    container))
-
-
-(defmethod hash-remove ((container fundamental-hash-tree-container) item)
-  (with-hash-tree-functions container
-    (multiple-value-bind (new-root removed)
-        (remove-from-hash (access-root container)
-                          (hash-fn item)
-                          item
-                          container)
-      (values (make-instance (type-of container)
-                             :equal-fn (read-equal-fn container)
-                             :hash-fn (read-hash-fn container)
-                             :root new-root
-                             :remove-fn (read-remove-fn container)
-                             :last-node-fn (read-last-node-fn container)
-                             :insert-fn (read-insert-fn container)
-                             :equal-fn (read-equal-fn container)
-                             :max-depth (read-max-depth container)
-                             :shallow (read-shallow container))
-              removed))))
-
-
-
-(defmethod hash-insert ((container functional-dictionary) (item list))
-  (with-hash-tree-functions container
-    (let ((result (insert-into-hash (access-root container)
-                                    (hash-fn (car item))
-                                    item
-                                    container)))
-      (make-instance (type-of container)
-                     :equal-fn (read-equal-fn container)
-                     :hash-fn (read-hash-fn container)
-                     :root result
-                     :remove-fn (read-remove-fn container)
-                     :last-node-fn (read-last-node-fn container)
-                     :insert-fn (read-insert-fn container)
-                     :equal-fn (read-equal-fn container)
-                     :max-depth (read-max-depth container)
-                     :shallow (read-shallow container)))))
-
-
-(defmethod hash-insert! ((container functional-dictionary) (item list))
-  (with-hash-tree-functions container
-    (let ((result (insert-into-hash! (access-root container)
-                                     (hash-fn (car item))
-                                     item
-                                     container)))
-      (setf (access-root container) result)
-      container)))
 
 
 (-> map-hash-tree ((-> (bottom-node) t) hash-node) hash-node)
@@ -738,32 +522,15 @@ Constructs and returns new functional-dictionary object.
   root)
 
 
-(defgeneric hash-map (fn obj))
-
-
-(defmethod hash-map (fn (obj functional-dictionary))
-  (map-hash-tree (lambda (content)
-                   (declare (type conflict-node content))
-                   (with-accessors ((conflict access-conflict)) content
-                     (map nil
-                          (lambda (key.value)
-                            (destructuring-bind (key . value) key.value
-                              (funcall fn key value)))
-                          conflict)))
-                 (access-root obj))
-  obj)
-
-
 (-> contains-part-of-hash (fixnum fixnum (integer 0 64)) boolean)
 (defun contains-part-of-hash (hash partial-hash depth)
   (~>> hash
-      (logxor partial-hash)
-      (ldb (byte depth 0))
-      zerop))
-
+       (logxor partial-hash)
+       (ldb (byte depth 0))
+       zerop))
 
 (defmethod hash-of-bottom-node ((node conflict-node) container)
-  (declare (type fundamental-hash-tree-container container))
+  (declare (type fundamental-hamt-container container))
   (with-hash-tree-functions container
     (~> node
         access-conflict
@@ -771,22 +538,21 @@ Constructs and returns new functional-dictionary object.
         hash-fn)))
 
 
-(defmethod rehash ((container functional-dictionary) conflict level)
+(defmethod rehash ((container functional-hamt-dictionary) conflict level)
   (declare (type conflict-node conflict))
   (let ((result (make-hash-table))
         (byte (byte +hash-level+ (* +hash-level+ level))))
     (declare (dynamic-extent byte))
     (with-hash-tree-functions container
       (iterate
-        (for key.value in (access-conflict conflict))
-        (for (key . value) = key.value)
-        (for hash = (hash-fn key))
-        (for index = (ldb byte hash))
-        (push key.value (access-conflict (ensure (gethash index result)
-                                           (make-instance 'conflict-node))))))
+       (for key.value in (access-conflict conflict))
+       (for (key . value) = key.value)
+       (for hash = (hash-fn key))
+       (for index = (ldb byte hash))
+       (push key.value (access-conflict (ensure (gethash index result)
+                                                (make-instance 'conflict-node))))))
     result))
 
 
 (defmethod single-elementp ((conflict conflict-node))
   (endp (cdr (access-conflict conflict))))
-

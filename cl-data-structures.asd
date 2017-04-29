@@ -25,5 +25,7 @@
                (:module dicts
                 :pathname "src/dicts"
                 :serial T
-                :components ((:file "package")
-                             (:file "hamt")))))
+                :components ((:file "packages")
+                             (:file "trait-classes")
+                             (:file "hamt/internal")
+                             (:file "hamt/api")))))

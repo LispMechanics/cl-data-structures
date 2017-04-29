@@ -13,9 +13,10 @@
    :update
    :update!
    :become-functional
+   :become-mutable
    :mutable-p
    :functional-p
    ;; trait classes
+   :fundamental-container
    :functional
-   :mutable
-   ))
+   :mutable))

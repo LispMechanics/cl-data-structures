@@ -53,9 +53,13 @@
 
 (defgeneric mutable-p (container)
   (:method ((container mutable)) t)
-  (:method ((container t)) nil))
+  (:method ((container fundamental-container)) nil))
 
 
 (defgeneric functional-p (container)
   (:method ((container functional)) t)
-  (:method ((container t)) nil))
+  (:method ((container fundamental-container)) nil))
+
+
+(defgeneric empty (container)
+  (:method ((container fundamental-container)) (zerop (size container))))
