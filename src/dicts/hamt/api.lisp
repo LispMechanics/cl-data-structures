@@ -32,24 +32,6 @@ Constructs and returns new functional-hamt-dictionary object.
                  :hash-fn hash-fn
                  :root nil
                  :max-depth max-depth
-                 :remove-fn (lambda (item node equal) (declare (type conflict-node node)
-                                                               (type (-> (t t) boolean)))
-                              (multiple-value-bind (result removed)
-                                  (try-remove item
-                                              (access-conflict node)
-                                              :test equal
-                                              :key #'car)
-                                (values (cond ((null result) nil)
-                                              (removed (make-instance 'conflict-node
-                                                                      :conflict result))
-                                              (t node))
-                                        removed)))
-                 :last-node-fn (lambda (item node equal)
-                                 (find item (access-conflict node) :key #'car :test equal))
-                 :insert-fn (lambda (item node equal)
-                              (declare (ignore equal))
-                              (make-instance 'conflict-node
-                                             :conflict (cons item (when node (access-conflict node)))))
                  :equal-fn equal-fn))
 
 
@@ -117,11 +99,9 @@ Constructs and returns new functional-hamt-dictionary object.
                                            :equal-fn (read-equal-fn container)
                                            :hash-fn (read-hash-fn container)
                                            :root new-root
-                                           :remove-fn (read-remove-fn container)
-                                           :last-node-fn (read-last-node-fn container)
-                                           :insert-fn (read-insert-fn container)
                                            :equal-fn (read-equal-fn container)
-                                           :max-depth (read-max-depth container))
+                                           :max-depth (read-max-depth container)
+                                           :size (1- (access-size container)))
                     container)
                 removed
                 old-value)))))
@@ -152,9 +132,6 @@ Constructs and returns new functional-hamt-dictionary object.
                                :equal-fn (read-equal-fn container)
                                :hash-fn (read-hash-fn container)
                                :root result
-                               :remove-fn (read-remove-fn container)
-                               :last-node-fn (read-last-node-fn container)
-                               :insert-fn (read-insert-fn container)
                                :equal-fn (read-equal-fn container)
                                :max-depth (read-max-depth container))
                 rep
@@ -204,11 +181,9 @@ Constructs and returns new functional-hamt-dictionary object.
                                    :equal-fn (read-equal-fn container)
                                    :hash-fn (read-hash-fn container)
                                    :root result
-                                   :remove-fn (read-remove-fn container)
-                                   :last-node-fn (read-last-node-fn container)
-                                   :insert-fn (read-insert-fn container)
                                    :equal-fn (read-equal-fn container)
-                                   :max-depth (read-max-depth container))
+                                   :max-depth (read-max-depth container)
+                                   :size (1+ (access-size container)))
                     container)
                 up
                 old)))))

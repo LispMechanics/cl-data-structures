@@ -62,22 +62,7 @@ Macros
            (hash-fn (read-hash-fn ,container)))
      (declare (ignorable (function hash-fn)
                          (function equal-fn)))
-     (flet ((remove-fn (item list)
-              (funcall (read-remove-fn ,container)
-                       item list
-                       (read-equal-fn ,container)))
-            (last-node-fn (item list)
-              (funcall (read-last-node-fn ,container)
-                       item list
-                       (read-equal-fn ,container)))
-            (insert-fn (item list)
-              (funcall (read-insert-fn ,container)
-                       item list
-                       (read-equal-fn ,container))))
-       (declare (ignorable (function remove-fn)
-                           (function last-node-fn)
-                           (function insert-fn)))
-       ,@body)))
+     ,@body))
 
 
 (defmacro descend-into-hash (root max-depth hash final-fn)
@@ -178,18 +163,6 @@ Interface class.
              :reader read-hash-fn
              :initarg :hash-fn
              :documentation "Closure used for key hashing. Setted by the user.")
-   (%remove-fn :type (-> (item bottom-node (-> t t) boolean) (values bottom-node boolean))
-               :reader read-remove-fn
-               :initarg :remove-fn
-               :documentation "Closure used for removing items from bottom level lists. @b(Not) exposed in any way to user.")
-   (%last-node-fn :type (-> (item t equal) t)
-                  :reader read-last-node-fn
-                  :initarg :last-node-fn
-                  :documentation "Closure used for finding items in the bottom node")
-   (%insert-fn :type (-> (item t (-> (t t) boolean)) list)
-               :reader read-insert-fn
-               :initarg :insert-fn
-               :documentation "Closure used for adding new item into bottom level lists. @b(Not) exposed in any way to user.")
    (%equal-fn :type (-> (t t) boolean)
               :reader read-equal-fn
               :initarg :equal-fn
@@ -197,7 +170,12 @@ Interface class.
    (%max-depth :initarg :max-depth
                :type (integer 0 10)
                :reader read-max-depth
-               :documentation "Maximal depth of tree."))
+               :documentation "Maximal depth of tree.")
+   (%size :initarg :size
+          :initform 0
+          :type positive-integer
+          :accessor access-size
+          :documentation "How many elements are in there?"))
   (:documentation "Base class of other containers. Acts as any container for bunch of closures (those vary depending on the concrete container) and root of the tree."))
 
 
