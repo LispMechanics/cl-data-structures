@@ -13,7 +13,7 @@
 
 (-> make-functional-hamt-dictionary ((-> (t) fixnum)
                                      (-> (t t) boolean)
-                                     &key (:max-depth positive-fixnum))
+                                     &key (:max-depth (integer 1 11)))
     functional-hamt-dictionary)
 (defun make-functional-hamt-dictionary (hash-fn equal-fn &key (max-depth 8))
 "
@@ -27,19 +27,21 @@
 @b(Description:)
 Constructs and returns new functional-hamt-dictionary object.
 "
-  (make-instance 'functional-hamt-dictionary
-                 :hash-fn hash-fn
-                 :root nil
-                 :max-depth max-depth
-                 :equal-fn equal-fn))
+  (assert (<= max-depth 10))
+  (assert (> max-depth 0))
+  (assure functional-hamt-dictionary (make-instance 'functional-hamt-dictionary
+                                                    :hash-fn hash-fn
+                                                    :root nil
+                                                    :max-depth max-depth
+                                                    :equal-fn equal-fn)))
 
 
 (defun make-mutable-hamt-dictionary (hash-fn equal-fn &key (max-depth 8))
-  (make-instance 'mutable-hamt-dictionary
-                 :equal-fn equal-fn
-                 :hash-fn hash-fn
-                 :root nil
-                 :max-depth max-depth))
+  (assure mutable-hamt-dictionary (make-instance 'mutable-hamt-dictionary
+                                                 :equal-fn equal-fn
+                                                 :hash-fn hash-fn
+                                                 :root nil
+                                                 :max-depth max-depth)))
 
 
 #|

@@ -349,7 +349,7 @@ Copy nodes and stuff.
                                        (return-from modify-copy-hamt (values root nil)))
                                      (if (or (null bottom-node-or-nil)
                                              (null conflict)
-                                             (eql length (1- (assure fixnum (read-max-depth container))))
+                                             (eql length (1- (the fixnum (read-max-depth container))))
                                              (single-elementp conflict))
                                          ;;if we didn't find element or element was found but depth was already maximal,
                                          ;;we will just return element, otherwise attempt to divide (rehash) conflicting node into few more
