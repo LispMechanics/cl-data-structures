@@ -107,29 +107,24 @@
 
 (eval-always
   (defun generate-if-else (conditions forms)
-    (if conditions
-        (list 'if (car conditions)
-              (if-let ((r (mapcar (lambda (x)
-                                    (destructuring-bind (tests form) x
-                                      (list (cdr tests) form)))
-                                  (remove-if (lambda (x)
-                                               (destructuring-bind ((b . w) form) x
-                                                 (declare (ignore w form))
-                                                 (not b)))
-                                             forms))))
-                (generate-if-else (cdr conditions) r)
-                '(error "Unhalded case!"))
-              (if-let ((r (mapcar (lambda (x)
-                                    (destructuring-bind (tests form) x
-                                      (list (cdr tests) form)))
-                                  (remove-if (lambda (x)
-                                               (destructuring-bind ((b . w) form) x
-                                                 (declare (ignore w form))
-                                                 b))
-                                             forms))))
-                (generate-if-else (cdr conditions) r)
-                '(error "Unhalded case!")))
-        (cons 'progn (mapcar #'cadr forms)))))
+    (flet ((without-test (x)
+             (destructuring-bind (tests form) x
+               (list (cdr tests) form)))
+           (check-test (x)
+             (destructuring-bind ((b . w) form) x
+               (declare (ignore w form))
+               b)))
+      (if conditions
+          (list 'if (car conditions)
+                (if-let ((r (mapcar #'without-test
+                                    (remove-if (compose #'not #'check-test) forms))))
+                  (generate-if-else (cdr conditions) r)
+                  '(error "Unhalded case!"))
+                (if-let ((r (mapcar #'without-test
+                                    (remove-if #'check-test forms))))
+                  (generate-if-else (cdr conditions) r)
+                  '(error "Unhalded case!")))
+          (cons 'progn (mapcar #'cadr forms))))))
 
 
 (defmacro cond+ (tests &body forms)
