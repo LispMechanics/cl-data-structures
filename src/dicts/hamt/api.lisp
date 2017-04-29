@@ -28,11 +28,18 @@
 Constructs and returns new functional-hamt-dictionary object.
 "
   (make-instance 'functional-hamt-dictionary
-                 :equal-fn equal-fn
                  :hash-fn hash-fn
                  :root nil
                  :max-depth max-depth
                  :equal-fn equal-fn))
+
+
+(defun make-mutable-hamt-dictionary (hash-fn equal-fn &key (max-depth 8))
+  (make-instance 'mutable-hamt-dictionary
+                 :equal-fn equal-fn
+                 :hash-fn hash-fn
+                 :root nil
+                 :max-depth max-depth))
 
 
 #|
@@ -59,19 +66,24 @@ Constructs and returns new functional-hamt-dictionary object.
 |#
 
 
-(-> functional-hamt-dictionary-at (functional-hamt-dictionary t) (values t boolean))
+(-> functional-hamt-dictionary-at (hamt-dictionary t) (values t boolean))
 (defun functional-hamt-dictionary-at (container location)
   (with-hash-tree-functions container
     (multiple-value-bind (r f)
-        (find-in-hash (access-root container)
-                      (hash-fn location)
-                      location
-                      container)
+        (let* ((hash (hash-fn location))
+               (root (access-root container))
+               (node (hash-do (node index) (root hash))))
+          (cond
+            ((typep node 'bottom-node) (try-find location
+                                                 (access-conflict node)
+                                                 :test (read-equal-fn container)
+                                                 :key #'car))
+            (t nil)))
       (values (cdr r)
               f))))
 
 
-(defmethod cl-ds:at ((container functional-hamt-dictionary) location)
+(defmethod cl-ds:at ((container hamt-dictionary) location)
   (functional-hamt-dictionary-at container location))
 
 
@@ -143,13 +155,50 @@ Constructs and returns new functional-hamt-dictionary object.
 
 
 (defun mutable-hamt-dictionary-insert! (container location new-value)
-  (with-hash-tree-functions container
-    (let ((result (insert-into-hash! (access-root container)
-                                     (hash-fn location)
-                                     (list location new-value)
-                                     container)))
-      (setf (access-root container) result)
-      container)))
+  (flet ((destructive-insert (node)
+           (let ((next-list (insert-or-replace (access-conflict node)
+                                               (list* location new-value)
+                                               :test (read-equal-fn container)
+                                               :key #'car)))
+             (setf (access-conflict node) next-list)
+             node)))
+    (with-hash-tree-functions container
+      (let* ((prev-node nil)
+             (prev-index 0)
+             (hash (hash-fn location))
+             (root (access-root container))
+             (result (block result (with-hash-tree-functions container
+                                     (hash-do (node index c) (root hash)
+                                       (symbol-macrolet ((just-node (unless (hash-node-contains node index)
+                                                                      (return-from result
+                                                                        (progn
+                                                                          (hash-node-insert! node
+                                                                                             index
+                                                                                             (make-conflict-node (list (list* location new-value))))
+                                                                          root)))))
+                                         (cond+ (node prev-node (typep node 'bottom-node))
+                                           ((t t t) (return-from result
+                                                      (progn
+                                                        (hash-node-replace! prev-node
+                                                                            prev-index
+                                                                            (rebuild-rehashed-node container
+                                                                                                   (1+ c)
+                                                                                                   (read-max-depth container)
+                                                                                                   (destructive-insert node)))
+                                                        root)))
+                                           ((t nil t) (return-from result
+                                                        (rebuild-rehashed-node container
+                                                                               (1+ c)
+                                                                               (read-max-depth container)
+                                                                               (destructive-insert node))))
+                                           ((nil nil nil) (return-from result
+                                                            (make-conflict-node (list (list* location new-value)))))
+                                           ((t t nil) just-node)
+                                           ((t nil nil) just-node)))
+                                       (setf prev-node node
+                                             prev-index index))))))
+        (setf (access-root container) result)
+        container))))
 
 
 (defmethod (setf cl-ds:at) (new-value (container mutable-hamt-dictionary) location)

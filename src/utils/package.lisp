@@ -13,6 +13,7 @@
    :lastpop
    :cond-compare
    :insert-or-replace
+   :try-find
    :try-remove))
 
 

@@ -34,3 +34,17 @@
         (setf removed t)
         (collect elt into result at start))
     (finally (return (values result removed)))))
+
+
+(defun try-find (item list &key (test #'eql) (key #'identity))
+  (let ((r nil)
+        (f nil))
+    (iterate
+      (for elt in list)
+      (when (funcall test
+                     (funcall key elt)
+                     item)
+        (setf r elt
+              f t)
+        (leave)))
+    (values r f)))

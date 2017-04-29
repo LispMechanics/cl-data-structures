@@ -411,42 +411,6 @@ Copy nodes and stuff.
   node)
 
 
-(-> insert-into-hash! (maybe-node fixnum t fundamental-hamt-container) hash-node)
-(defun insert-into-hash! (root hash item container)
-  (let ((prev-node nil)
-        (prev-index 0))
-    (with-hash-tree-functions container
-      (hash-do (node index c) (root hash)
-        (symbol-macrolet ((just-node (unless (hash-node-contains node index)
-                                       (return-from insert-into-hash!
-                                         (progn
-                                           (hash-node-insert! node
-                                                              index
-                                                              (insert-fn item nil))
-                                           root)))))
-          (cond+ (node prev-node (typep node 'bottom-node))
-            ((t t t) (return-from insert-into-hash!
-                       (progn
-                         (hash-node-replace! prev-node
-                                             prev-index
-                                             (rebuild-rehashed-node container
-                                                                    (1+ c)
-                                                                    (read-max-depth container)
-                                                                    (insert-fn item node)))
-                         root)))
-            ((t nil t) (return-from insert-into-hash!
-                         (rebuild-rehashed-node container
-                                                (1+ c)
-                                                (read-max-depth container)
-                                                (insert-fn item node))))
-            ((nil nil nil) (return-from insert-into-hash!
-                             (insert-fn item node)))
-            ((t t nil) just-node)
-            ((t nil nil) just-node)))
-        (setf prev-node node
-              prev-index index)))))
-
-
 (-> hash-node-remove-from-the-copy (hash-node fixnum) maybe-node)
 (defun hash-node-remove-from-the-copy (node index)
   "Returns copy of node, but without element under index. Not safe, does not check if element is actually present."
@@ -468,23 +432,6 @@ Copy nodes and stuff.
              (new-mask (dpb 0 (byte 1 index) (hash-node-mask node))))
          (when new-array
            (make-hash-node :mask new-mask :content new-array)))))
-
-
-(-> find-in-hash (hash-node fixnum t fundamental-hamt-container) (values t boolean))
-(defun find-in-hash (root hash item container)
-  "Obtain nodes in loop until node is missing or bottom-node was found
-   @b(Arguments and values)
-   @begin(list)
-    @item(root -- root of scanned subtree)
-    @item(hash -- fixnum containing hash of item)
-    @item(container -- used for stored functions)"
-  (declare (optimize (speed 3) (debug 0) (safety 0) (compilation-speed 0) (space 0)))
-  (with-hash-tree-functions container
-    (let ((node (hash-do (node index) (root hash))))
-      (cond
-        ((typep node 'bottom-node) (values (last-node-fn item node) t))
-        (t nil)))))
-
 
 
 (-> map-hash-tree ((-> (bottom-node) t) hash-node) hash-node)
