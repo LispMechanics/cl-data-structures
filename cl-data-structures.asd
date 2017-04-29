@@ -8,7 +8,14 @@
   :maintainer "Lisp Mechanics"
   :depends-on (:iterate :alexandria :serapeum)
   :serial T
-  :components ((:module utils
+  :components ((:file "package")
+               (:module api
+                :pathname "src/api"
+                :serial T
+                :components ((:file "trait-classes")
+                             (:file "generics")
+                             (:file "conditions")))
+               (:module utils
                 :pathname "src/utils"
                 :serial T
                 :components ((:file "package")
