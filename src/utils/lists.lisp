@@ -46,7 +46,7 @@
 
 
 (defun try-find (item list &key (test #'eql) (key #'identity))
-  (multiple-value-bind (r) (try-find-cell item list :test test :key key)
+  (let ((r (try-find-cell item list :test test :key key)))
     (values (car r)
             (not (null r)))))
 
