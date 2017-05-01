@@ -1,114 +1,127 @@
 @begin(section)
- @title(Overview)
+@title(Overview)
 
 cl-data-structures is a portable collection of data structures for common lisp. Design goals of this library are following:
 
- @begin(list)
- @item(Uniform -- data structures that are used for specific task should have common interface. User should just know how to use dictionary, and not specific implementation of it.)
- @item(Complete -- this package intends to be definitive common lisp data structures collection, containing both functional and mutable structures, for every use case possible.)
- @item(Universal -- there should be no limitations on when this library is useful.)
- @end(list)
+@begin(list)
+@item(Uniform -- data structures that are used for specific task should have common interface. User should just know how to use dictionary, and not specific implementation of it.)
+@item(Complete -- this package intends to be definitive common lisp data structures collection, containing both functional and mutable structures, for every use case possible.)
+@item(Universal -- there should be no limitations on when this library is useful.)
+@end(list)
 
 To achieve this goals, package cl-data-structures contains common api and various implementations of this api in separate packages. Implementations are divided into few categories:
 
- @begin(list)
- @item(Dicts -- short for dictionaries. Data structures that map locations to values. All in the package cl-ds.dicts)
- @end(list)
+@begin(list)
+@item(Dicts -- short for dictionaries. Data structures that map locations to values. All in the package cl-ds.dicts)
+@end(list)
+
+@begin(section)
+@title(Conventions)
+Data structure types are not hidden under generic interface name (like std::unordered_map) but instead names are directly exposed to the user. User is encouraged to read Implementation details section of this manual fo figure out which data structure implementation works best for his use case. Destructive functions follow scheme style of adding '!' as a suffix (so we have GF ADD! that is destructive version of ADD).
+
+@end(section)
 
 @end(section)
 
 @begin(section)
- @title(API reference)
+@title(API reference)
 
-   @begin(section)
-    @title(API classes)
-    These are classes that act as traits, providing user with information on how instance of this class is expected to behave.
+@begin(section)
+@title(API classes)
+These are classes that act as traits, providing user with information on how instance of this class is expected to behave.
 
-    @cl:with-package[name="cl-data-structures"](
-     @cl:doc(class fundamental-container)
-     @cl:doc(class functional)
-     @cl:doc(class mutable)
-    )
+@cl:with-package[name="cl-data-structures"](
+@cl:doc(class fundamental-container)
+@cl:doc(class functional)
+@cl:doc(class mutable)
+)
 
-    In addition to the classes above cl-data-structures also implements more specific classes, describing higher level class usage. In package cl-ds.dicts:
-    @cl:with-package[name="cl-data-structures.dicts"](
-     @cl:doc(class dictionary)
-    )
-
-   @end(section)
-
-   @begin(section)
-    @title(Common API generic functions)
-    @cl:with-package[name="cl-data-structures"](
-     @cl:doc(generic at)
-     @cl:doc(generic size)
-     @cl:doc(generic become-functional)
-     @cl:doc(generic become-mutable)
-    )
-   @end(section)
-
-   @begin(section)
-    @title(Functional API generic functions)
-    @cl:with-package[name="cl-data-structures"](
-     @cl:doc(generic add)
-     @cl:doc(generic insert)
-     @cl:doc(generic erase)
-     @cl:doc(generic update)
-    )
-   @end(section)
-
-   @begin(section)
-    @title(Mutable API generic functions)
-    @cl:with-package[name="cl-data-structures"](
-     @cl:doc(generic add!)
-     @cl:doc(generic erase!)
-     @cl:doc(generic update!)
-    )
-   @end(section)
+In addition to the classes above cl-data-structures also implements more specific classes, describing higher level class usage. In package cl-ds.dicts:
+@cl:with-package[name="cl-data-structures.dicts"](
+@cl:doc(class dictionary)
+)
 
 @end(section)
 
 @begin(section)
- @title(Implementation details)
+@title(Common API generic functions)
+@cl:with-package[name="cl-data-structures"](
+@cl:doc(generic at)
+@cl:doc(generic size)
+@cl:doc(generic become-functional)
+@cl:doc(generic become-mutable)
+)
+@end(section)
 
-  @begin(section)                      
-   @title(HAMT)
+@begin(section)
+@title(Functional API generic functions)
+@cl:with-package[name="cl-data-structures"](
+@cl:doc(generic add)
+@cl:doc(generic insert)
+@cl:doc(generic erase)
+@cl:doc(generic update)
+)
+@end(section)
 
-   HAMT stands from hash array mapped trie. It is essentially hash tree, allowing to implement simple and efficient functional hash table. Described in great detail in the article http://lampwww.epfl.ch/papers/idealhashtrees.pdf and already used in few functional languages (for instance: clojure). cl-data-structures also offers mutable variant of hamt, because it offers faster insert and erase which can be beneficial if you already identified part of your code that bottle necks application and you are sure that your side effects won't leak outside.
+@begin(section)
+@title(Mutable API generic functions)
+@cl:with-package[name="cl-data-structures"](
+@cl:doc(generic add!)
+@cl:doc(generic erase!)
+@cl:doc(generic update!)
+)
+@end(section)
 
-  @end(section)
+@end(section)
+
+@begin(section)
+@title(Implementation details)
+
+@begin(section)
+@title(HAMT)
+
+HAMT stands from hash array mapped trie. It is essentially hash tree, allowing to implement simple and efficient functional hash table. Described in great detail in the article http://lampwww.epfl.ch/papers/idealhashtrees.pdf and already used in few functional languages (for instance: clojure). cl-data-structures also offers mutable variant of hamt, because it offers faster insert and erase which can be beneficial if you already identified part of your code that bottle necks application and you are sure that your side effects won't leak outside.
+
+@end(section)
+
+@begin(section)
+@title(Trie)
+I don't know, ask Malice :D
+@end(section)
 
 
 @end(section)
 
 @begin(section)
- @title(Utility functions)
- Although implementing those is not in the scope of the project, it was sometimes required. Usually used by internals of implementations. In the package cl-ds.utils:
+@title(Utility)
+@begin(section)
+@title(Utility functions)
+Although implementing those is not in the scope of the project, it was sometimes required. Usually used by internals of implementations. In the package cl-ds.utils:
 
-    @cl:with-package[name="cl-data-structures.utils"](
-     @cl:doc(function insert-or-replace)
-     @cl:doc(function try-remove)
-     @cl:doc(function try-find-cell)
-     @cl:doc(function try-find)
-     @cl:doc(function swapop)
-     @cl:doc(function pop-last)
-     @cl:doc(function erase-from-vector)
-     @cl:doc(function erase-from-vector)
-     @cl:doc(function merge-ordered-vectors)
-     @cl:doc(function ordered-p)
-    )
+@cl:with-package[name="cl-data-structures.utils"](
+@cl:doc(function insert-or-replace)
+@cl:doc(function try-remove)
+@cl:doc(function try-find-cell)
+@cl:doc(function try-find)
+@cl:doc(function swapop)
+@cl:doc(function pop-last)
+@cl:doc(function erase-from-vector)
+@cl:doc(function erase-from-vector)
+@cl:doc(function merge-ordered-vectors)
+@cl:doc(function ordered-p)
+)
 
 @end(section)
 
 @begin(section)
- @title(Utility macros)
- Macros used for implementation of data structures.
- @cl:with-package[name="cl-data-structures.utils"](
-  @cl:doc(macro with-vectors)
-  @cl:doc(macro bind-lambda)
-  @cl:doc(macro lazy-let)
-  @cl:doc(macro cond+)
- )
- 
+@title(Utility macros)
+Macros used for implementation of data structures.
+@cl:with-package[name="cl-data-structures.utils"](
+@cl:doc(macro with-vectors)
+@cl:doc(macro bind-lambda)
+@cl:doc(macro lazy-let)
+@cl:doc(macro cond+)
+)
 
+@end(section)
 @end(section)
