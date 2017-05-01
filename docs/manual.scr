@@ -37,6 +37,21 @@ To achieve this goals, package cl-data-structures contains common api and variou
 
    @end(section)
 
+   @begin(section)
+    @title(API generic functions)
+    @cl:with-package[name="cl-data-structures"](
+     @cl:doc(generic at)
+     @cl:doc(generic add)
+     @cl:doc(generic add!)
+     @cl:doc(generic insert)
+     @cl:doc(generic erase)
+     @cl:doc(generic erase!)
+     @cl:doc(generic size)
+     @cl:doc(generic update)
+     @cl:doc(generic update!)
+    )
+   @end(section)
+
 @end(section)
 
 @begin(section)
