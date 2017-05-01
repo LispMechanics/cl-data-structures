@@ -99,8 +99,7 @@ Constructs and returns new functional-hamt-dictionary object.
                             container
                             (lambda (bottom)
                               (multiple-value-bind (list removed value)
-                                  (try-remove location
-                                              (and bottom (access-conflict bottom))
+                                  (try-remove location (and bottom (access-conflict bottom))
                                               :test (read-equal-fn container)
                                               :key #'car)
                                 (setf old-value (cdr value))

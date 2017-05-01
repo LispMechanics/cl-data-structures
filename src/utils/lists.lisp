@@ -60,7 +60,7 @@
     (with last-cell = nil)
     (if (funcall test
                  (funcall key elt)
-                 key item)
+                 item)
         (setf removed t
               value elt)
         (collect elt into result at start))
