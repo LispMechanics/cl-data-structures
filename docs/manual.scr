@@ -51,6 +51,8 @@ In addition to the classes above cl-data-structures also implements more specifi
 @cl:doc(generic empty)
 @cl:doc(generic become-functional)
 @cl:doc(generic become-mutable)
+@cl:doc(generic functional-p)
+@cl:doc(generic mutable-p)
 )
 @end(section)
 

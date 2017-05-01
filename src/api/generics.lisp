@@ -20,7 +20,9 @@
 
 
 (defgeneric add (container location new-value)
-  (:documentation "@b(Functional API:) Non-destructively insert NEW-VALUE into CONTAINER at LOCATION. Will return two values: first one is the new container, second one is boolean informing if insert took place."))
+  (:documentation "@b(Functional API:) Non-destructively insert NEW-VALUE into CONTAINER at LOCATION. Will return two values: first one is the new container, second one is boolean informing if insert took place.
+
+  @b(Side effects:) None"))
 
 
 (defgeneric add! (container location new-value)
@@ -28,11 +30,15 @@
 
 
 (defgeneric insert (container location new-value)
-  (:documentation "@b(Functional API:) Non-destructively insert NEW-VALUE into CONTAINER at LOCATION. Will replace element value at LOCATION if it was already occupied. Will return up to three values: new container, boolean to inform user if element was already in the container and old value AT location (or nil if it was not present). Essentially purely functional (SETF (AT CONTAINER) NEW-VALUE)."))
+  (:documentation "@b(Functional API:) Non-destructively insert NEW-VALUE into CONTAINER at LOCATION. Will replace element value at LOCATION if it was already occupied. Will return up to three values: new container, boolean to inform user if element was already in the container and old value AT location (or nil if it was not present). Essentially purely functional (SETF (AT CONTAINER) NEW-VALUE).
+
+ @b(Side effects:) None"))
 
 
 (defgeneric erase (container location)
-  (:documentation "@b(Functional API:) Non-destructively remove element at LOCATION from the CONTAINER."))
+  (:documentation "@b(Functional API:) Non-destructively remove element at LOCATION from the CONTAINER.
+
+  @b(Side effects:) None"))
 
 
 (defgeneric erase! (container location)
@@ -40,11 +46,19 @@
 
 
 (defgeneric size (container)
-  (:documentation "How many elements CONTAINER holds currently?"))
+  (:documentation "How many elements CONTAINER holds currently?
+
+  @b(Side effects:) None"))
 
 
 (defgeneric update (container location new-value)
-  (:documentation "@b(Functional API:) If LOCATION is taken in the CONTAINER, update it. Returns three values: first: new CONTAINER with update LOCATION, second: t if update took place; nil otherwise, previous value."))
+  (:documentation "@b(Functional API:) If LOCATION is taken in the CONTAINER, update it. @b(Returns) three values:
+   @begin(list)
+   @item(first -- new CONTAINER with update LOCATION)
+   @item(second -- t if update took place nil otherwise)
+   @item(third -- previous value).
+   @end(list)
+   @b(Side effects:) None"))
 
 
 (defgeneric update! (new-value container location)
@@ -71,14 +85,18 @@
 
 (defgeneric mutable-p (container)
   (:method ((container mutable)) t)
-  (:method ((container fundamental-container)) nil))
+  (:method ((container fundamental-container)) nil)
+  (:documentation "Will @b(return) T if CONTAINER exposes mutable API."))
 
 
 (defgeneric functional-p (container)
   (:method ((container functional)) t)
-  (:method ((container fundamental-container)) nil))
+  (:method ((container fundamental-container)) nil)
+  (:documentation "Will @b(return) T if CONTAINER exposes functional API."))
 
 
 (defgeneric empty (container)
   (:method ((container fundamental-container)) (zerop (size container)))
-  (:documentation "@b(Returns) T if container is empty and @b(returns) NIL if there is something in it. All containers start as empty"))
+  (:documentation "@b(Returns) T if container is empty and @b(returns) NIL if there is something in it. All containers start as empty
+
+  @b(Side effects:) None"))
