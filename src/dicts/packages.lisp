@@ -17,12 +17,13 @@
    :make-mutable-hamt-hamt-dictionary
 
    :hamt-dictionary-at
+   :hamt-dictionary-size
 
    :mutable-hamt-dictionary-insert!
    :mutable-hamt-dictionary-update!
+   :mutable-hamt-dictionary-add!
 
    :functional-hamt-dictionary-insert
-   :functional-hamt-dictionary-at
    :functional-hamt-dictionary-add
    :functional-hamt-dictionary-erase
    :functional-hamt-dictionary-update))

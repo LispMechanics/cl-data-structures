@@ -95,6 +95,7 @@ HAMT stands from hash array mapped trie. It is essentially hash tree, allowing t
 @cl:doc(function functional-hamt-dictionary-insert)
 @cl:doc(function functional-hamt-dictionary-erase)
 @cl:doc(function hamt-dictionary-at)
+@cl:doc(function hamt-dictionary-size)
 @cl:doc(function mutable-hamt-dictionary-update!)
 @cl:doc(function mutable-hamt-dictionary-insert!)
 @cl:doc(function mutable-hamt-dictionary-add!)

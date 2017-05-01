@@ -305,6 +305,12 @@ Constructs and returns new functional-hamt-dictionary object.
         (values container f old-value)))))
 
 
+(-> hamt-dictionary-size (hamt-dictionary) positive-fixnum)
+(defun hamt-dictionary-size (container)
+  "Implementation of SIZE"
+  (access-size container))
+
+
 #|
 
 Methods. Those will just call non generic functions.
@@ -317,7 +323,7 @@ Methods. Those will just call non generic functions.
 
 
 (defmethod cl-ds:size ((container hamt-dictionary))
-  (access-size container))
+  (hamt-dictionary-size container))
 
 
 (defmethod cl-ds:at ((container hamt-dictionary) location)
