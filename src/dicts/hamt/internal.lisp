@@ -250,32 +250,32 @@ Copy nodes and stuff.
 
 (-> hash-node-insert-into-copy (hash-node t hash-node-index) hash-node)
 (defun hash-node-insert-into-copy (hash-node item index)
-  (let* ((current-array (hash-node-content hash-node))
-         (new-array (make-array (1+ (array-dimension current-array 0))))
-         (position (hash-node-to-masked-index hash-node index)))
-    (assert (~> (array-dimension new-array 0)
-                (<= 64)))
-    ;;before new element
-    (iterate
+  (let ((position (hash-node-to-masked-index hash-node index)))
+    (with-vectors ((current-array (hash-node-content hash-node))
+                   (new-array (make-array (1+ (array-dimension current-array 0)))))
+      (assert (~> (array-dimension new-array 0)
+                  (<= 64)))
+      ;;before new element
+      (iterate
 
-      (for i from 0 below position)
-      (setf (aref new-array i)
-            (aref current-array i)))
+        (for i from 0 below position)
+        (setf (new-array i)
+              (current-array i)))
 
-    ;;new element
-    (setf (aref new-array position)
-          item)
+      ;;new element
+      (setf (new-array position)
+            item)
 
-    ;;after new element
-    (iterate
-      (for i from position below (array-dimension current-array 0))
-      (setf (aref new-array (1+ i))
-            (aref current-array i)))
+      ;;after new element
+      (iterate
+        (for i from position below (array-dimension current-array 0))
+        (setf (new-array (1+ i))
+              (current-array i)))
 
-    ;;just make new hash-node
-    (make-hash-node :mask (logior (hash-node-mask hash-node)
-                                  (ash 1 index))
-                    :content new-array)))
+      ;;just make new hash-node
+      (make-hash-node :mask (logior (hash-node-mask hash-node)
+                                    (ash 1 index))
+                      :content new-array))))
 
 
 (defun non-empty-hash-table-p (table)
@@ -338,36 +338,37 @@ Copy nodes and stuff.
     (flet ((cont (path indexes length) ;path and indexes have constant size BUT only part of it is used, that's why length is passed here
              (declare (type simple-array path indexes)
                       (type fixnum length))
-             (iterate
-               (for i from (- length 1) downto 0) ;reverse order (starting from deepest node)
-               (for node = (aref path i))
-               (for index = (aref indexes i))
-               (for ac initially (let* ((last (aref path (1- length)))
-                                        (bottom-node-or-nil (and (typep last 'bottom-node) last)))
-                                   (multiple-value-bind (conflict changed) (bottom-fn bottom-node-or-nil)
-                                     (unless changed
-                                       (return-from modify-copy-hamt (values root nil)))
-                                     (if (or (null bottom-node-or-nil)
-                                             (null conflict)
-                                             (eql length (1- (the fixnum (read-max-depth container))))
-                                             (single-elementp conflict))
-                                         ;;if we didn't find element or element was found but depth was already maximal,
-                                         ;;we will just return element, otherwise attempt to divide (rehash) conflicting node into few more
-                                         conflict
-                                         ;;rehash actually returns cl:hash-table, build-rehashed-node transforms it into another hash-node, depth is increased by 1 this way
-                                         (rebuild-rehashed-node container
-                                                                length
-                                                                (read-max-depth container)
-                                                                conflict))))
-                    then (cond ((null node) ac) ;no node on path, just use our conflict node
-                               ((typep node 'bottom-node) ac) ;corner case, added conflict or resolved conflict
-                               (ac (if (hash-node-contains node index)
-                                       (hash-node-replace-in-the-copy node ac index)
-                                       (hash-node-insert-into-copy node ac index)))
-                               (t (if (eql 1 (hash-node-size node))
-                                      ac
-                                      (hash-node-remove-from-the-copy node index)))))
-               (finally (return (values ac t))))))
+             (with-vectors (path indexes)
+               (iterate
+                 (for i from (- length 1) downto 0) ;reverse order (starting from deepest node)
+                 (for node = (path i))
+                 (for index = (indexes i))
+                 (for ac initially (let* ((last (path (1- length)))
+                                          (bottom-node-or-nil (and (typep last 'bottom-node) last)))
+                                     (multiple-value-bind (conflict changed) (bottom-fn bottom-node-or-nil)
+                                       (unless changed
+                                         (return-from modify-copy-hamt (values root nil)))
+                                       (if (or (null bottom-node-or-nil)
+                                               (null conflict)
+                                               (eql length (1- (the fixnum (read-max-depth container))))
+                                               (single-elementp conflict))
+                                           ;;if we didn't find element or element was found but depth was already maximal,
+                                           ;;we will just return element, otherwise attempt to divide (rehash) conflicting node into few more
+                                           conflict
+                                           ;;rehash actually returns cl:hash-table, build-rehashed-node transforms it into another hash-node, depth is increased by 1 this way
+                                           (rebuild-rehashed-node container
+                                                                  length
+                                                                  (read-max-depth container)
+                                                                  conflict))))
+                      then (cond ((null node) ac) ;no node on path, just use our conflict node
+                                 ((typep node 'bottom-node) ac) ;corner case, added conflict or resolved conflict
+                                 (ac (if (hash-node-contains node index)
+                                         (hash-node-replace-in-the-copy node ac index)
+                                         (hash-node-insert-into-copy node ac index)))
+                                 (t (if (eql 1 (hash-node-size node))
+                                        ac
+                                        (hash-node-remove-from-the-copy node index)))))
+                 (finally (return (values ac t)))))))
       (declare (dynamic-extent (function cont))
                (inline cont))
       (descend-into-hash root
@@ -442,7 +443,7 @@ Copy nodes and stuff.
                               :adjustable t
                               :fill-pointer 1
                               :initial-element root))
-    (for current = (lastpop stack))
+    (for current = (pop-last stack))
     (while current)
     (for (node . hash-path) = current)
     (etypecase node

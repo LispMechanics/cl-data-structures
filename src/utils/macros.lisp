@@ -2,6 +2,7 @@
 
 
 (defmacro lazy-let (bindings &body body)
+  "Like LET but bind variable only once it is accessed"
   (flet ((gensym-list (x) (list (car x) (gensym) (cadr x) (caddr x) (gensym)))
          (make-let-list (x) `(,(cadr x) ',(cadr x)))
          (make-macro-list (x) (destructuring-bind (symbol var form rec init) x
@@ -42,6 +43,7 @@
 
 
 (defmacro bind-lambda (fn &rest args)
+  "Curry function. For instance (bin-lambda #'+ 2 :_) is like (curry #+ 2). However this can be used to bind more arguments. For instance (bind-lambda #'/ 5 :_ 3 :_ 4 :_ 2 :_ :_ 12)"
   (let* ((args-count 0)
          (fargs nil)
          (binded nil)
@@ -60,6 +62,7 @@
 
 
 (defmacro with-vectors (vector-bindings &body body)
+  "Macro for simpler vector usage. Will expand into local functions that act as accessors for vectors so you will not have to write stuff like (aref vector 0), instead you can write (vector 0)"
   (let ((vector-bindings (if (symbolp vector-bindings)
                              (list vector-bindings)
                              vector-bindings)))
@@ -78,7 +81,7 @@
                  `((setf ,x)  (,!value ,!index)
                    (setf (aref ,x ,!index) ,!value))))
           (let ((functions (mapcar #'get-f-name vector-bindings)))
-            `(let ,(mapcar #'get-let-forms vector-bindings)
+            `(let* ,(mapcar #'get-let-forms vector-bindings)
                (labels (,@(mapcar #'make-aref-list functions)
                         ,@(mapcar #'make-setf-list functions))
                  (declare (ignorable ,@(mapcar (lambda (x) `(function ,x))
@@ -93,16 +96,6 @@
                                   ,@(mapcar (lambda (x) `(setf ,x))
                                             functions)))
                  ,@body))))))))
-
-(eval-always
-  (defun to-bits (list)
-    (iterate
-      (for elt in (reverse list))
-      (for i from 0)
-      (for result
-           initially 0
-           then (dpb (if elt 1 0) (byte 1 i) result))
-      (finally (return result)))))
 
 
 (eval-always
@@ -128,7 +121,8 @@
 
 
 (defmacro cond+ (tests &body forms)
-   (generate-if-else tests forms))
+  "If else ladder generator."
+  (generate-if-else tests forms))
 
 
 (defmacro cond-compare ((a b) < = >)

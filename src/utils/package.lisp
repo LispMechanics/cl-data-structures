@@ -3,6 +3,7 @@
   (:nicknames :cl-ds.utils)
   (:shadowing-import-from :iterate :collecting :summing :in)
   (:export
+   :extendable-vector
    :lazy-let
    :with-vectors
    :bind-lambda
@@ -10,7 +11,7 @@
    :cond+
    :swapop
    :erase-from-vector
-   :lastpop
+   :pop-last
    :cond-compare
    :insert-or-replace
    :try-find

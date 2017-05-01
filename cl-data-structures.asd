@@ -20,6 +20,7 @@
                 :serial T
                 :components ((:file "package")
                              (:file "macros")
+                             (:file "types")
                              (:file "ordered-algorithms")
                              (:file "lists")
                              (:file "modification-algorithms")))

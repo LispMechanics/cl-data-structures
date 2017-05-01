@@ -10,8 +10,18 @@
   (:nicknames :cl-ds.dicts.hamt)
   (:shadowing-import-from :iterate :collecting :summing :in)
   (:export
+
    :read-max-depth
+
    :make-functional-hamt-dictionary
    :make-mutable-hamt-hamt-dictionary
-   :functional-hamt-dictionary-at))
+
+   :hamt-dictionary-at
+
+   :mutable-hamt-dictionary-insert!
+   :mutable-hamt-dictionary-update!
+
+   :functional-hamt-dictionary-insert
+   :functional-hamt-dictionary-erase
+   :functional-hamt-dictionary-update))
 
