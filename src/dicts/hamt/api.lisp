@@ -262,16 +262,15 @@ Constructs and returns new functional-hamt-dictionary object.
                                       (hash-fn location)
                                       container
                                       (lambda (bottom)
-                                        (multiple-value-bind (next-list replaced)
-                                            (insert-or-replace (and bottom (access-conflict bottom))
-                                                               (list* location new-value)
-                                                               :test (read-equal-fn container)
-                                                               :list-key #'car
-                                                               :item-key #'car)
-                                          (setf add (not replaced))
-                                          (if replaced
+                                        (let* ((list (and bottom (access-conflict bottom)))
+                                               (item (find location list
+                                                           :key #'car
+                                                           :test (read-equal-fn container))))
+                                          (setf add (not item))
+                                          (if item
                                               (values bottom nil)
-                                              (values (make-conflict-node next-list)
+                                              (values (make-conflict-node (cons (list* location new-value)
+                                                                                list))
                                                       t)))))))
         (values (if add
                     (make-instance (type-of container)
