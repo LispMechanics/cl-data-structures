@@ -279,3 +279,7 @@ Constructs and returns new functional-hamt-dictionary object.
 
 (defmethod cl-ds:update! ((container mutable-hamt-dictionary) location new-value)
   (mutable-hamt-dictionary-update! container location new-value))
+
+
+(defmethod cl-ds:size ((container hamt-dictionary))
+  (access-size container))
