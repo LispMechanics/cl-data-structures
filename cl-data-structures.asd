@@ -6,7 +6,7 @@
   :license "MIT"
   :author "Lisp Mechanics"
   :maintainer "Lisp Mechanics"
-  :depends-on (:iterate :alexandria :serapeum)
+  :depends-on (:iterate :alexandria :serapeum :prove)
   :serial T
   :components ((:file "package")
                (:module api

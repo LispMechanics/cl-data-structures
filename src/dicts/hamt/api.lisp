@@ -145,7 +145,8 @@ Constructs and returns new functional-hamt-dictionary object.
                                :equal-fn (read-equal-fn container)
                                :hash-fn (read-hash-fn container)
                                :root result
-                               :max-depth (read-max-depth container))
+                               :max-depth (read-max-depth container)
+                               :size (1+ (access-size container)))
                 rep
                 old)))))
 
@@ -256,7 +257,8 @@ Constructs and returns new functional-hamt-dictionary object.
 
 
 (defun functional-hamt-dictionary-add (container location new-value)
-  (let ((add nil))
+  (let ((add nil)
+        (old-value nil))
     (with-hash-tree-functions container
       (let ((result (modify-copy-hamt (access-root container)
                                       (hash-fn location)
@@ -266,7 +268,8 @@ Constructs and returns new functional-hamt-dictionary object.
                                                (item (find location list
                                                            :key #'car
                                                            :test (read-equal-fn container))))
-                                          (setf add (not item))
+                                          (setf add (not item)
+                                                old-value (cdr item))
                                           (if item
                                               (values bottom nil)
                                               (values (make-conflict-node (cons (list* location new-value)
@@ -278,9 +281,10 @@ Constructs and returns new functional-hamt-dictionary object.
                                    :hash-fn (read-hash-fn container)
                                    :root result
                                    :max-depth (read-max-depth container)
-                                   :size (access-size container))
+                                   :size (1+ (access-size container)))
                     container)
-                add)))))
+                add
+                old-value)))))
 
 
 (defmethod cl-ds:update ((container functional-hamt-dictionary) location new-value)
