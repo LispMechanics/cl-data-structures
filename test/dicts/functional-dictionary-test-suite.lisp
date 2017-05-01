@@ -24,6 +24,7 @@
   (once-only (limit)
     `(let ((dict ,init-form))
        (is (size dict) 0)
+       (ok (empty dict))
        (diag "Testing insert")
        (iterate
          (for s from 1 below ,limit)
@@ -90,7 +91,7 @@
 
 
 (defun run-suite ()
-  (plan 20)
+  (plan 21)
   (insert-every-word (cl-ds.dicts.hamt:make-functional-hamt-dictionary #'sxhash #'string=) 2)
   (finalize))
 

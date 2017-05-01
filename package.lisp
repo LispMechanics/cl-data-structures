@@ -9,6 +9,7 @@
    :add
    :add!
    :insert
+   :empty
    :size
    :update
    :update!

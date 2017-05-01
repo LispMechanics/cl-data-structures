@@ -80,4 +80,5 @@
 
 
 (defgeneric empty (container)
-  (:method ((container fundamental-container)) (zerop (size container))))
+  (:method ((container fundamental-container)) (zerop (size container)))
+  (:documentation "@b(Returns) t if container is empty and @b(returns) nil if there is something in it. All containers start as empty"))
