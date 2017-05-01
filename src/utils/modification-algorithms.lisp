@@ -3,7 +3,7 @@
 
 (-> pop-last (extendable-vector) t)
 (defun pop-last (vector)
-  "If fill pointer is larger than zero reduce fill pointer and returns last vector element.
+  "If fill pointer is larger than zero reduce fill pointer and @b(returns) last vector element.
 
  @b(Side effects:) reduce fill pointer of vector.
 
@@ -34,7 +34,11 @@
 (defun swapop (vector index)
   "Swaps element under INDEX with last element. Pops last element and returns VECTOR.
 
-   @b(Values and parameters:) vector -- input vector, index -- under which index element will be removed?
+   @b(Values and parameters:)
+   @begin(list)
+   @item(vector -- input vector)
+   @item(index -- under which index element will be removed?)
+   @end(list)
 
    @b(Side Effects:) changes element under INDEX to last element in the vector, reduces fill-pointer."
   (unless (zerop (fill-pointer vector))
