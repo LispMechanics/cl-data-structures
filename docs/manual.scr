@@ -19,6 +19,8 @@ To achieve this goals, package cl-data-structures contains common api and variou
 @title(Conventions)
 Data structure types are not hidden under generic interface name (like std::unordered_map) but instead names are directly exposed to the user. User is encouraged to read Implementation details section of this manual fo figure out which data structure implementation works best for his use case. Destructive functions follow scheme style of adding '!' as a suffix (so we have GF ADD! that is destructive version of ADD).
 
+Methods that implements API generic functions redirect logic to good, old fashioned functions named in convention data-structure-name-operation (for instance hamt-dictionary-at). If you @b(really) want to squeeze all the performance you can get, you may want to skip generic function dispatch by using those functions directly.
+
 @end(section)
 
 @end(section)
@@ -84,6 +86,20 @@ In addition to the classes above cl-data-structures also implements more specifi
 @title(HAMT)
 
 HAMT stands from hash array mapped trie. It is essentially hash tree, allowing to implement simple and efficient functional hash table. Described in great detail in the article http://lampwww.epfl.ch/papers/idealhashtrees.pdf and already used in few functional languages (for instance: clojure). cl-data-structures also offers mutable variant of hamt, because it offers faster insert and erase which can be beneficial if you already identified part of your code that bottle necks application and you are sure that your side effects won't leak outside.
+
+
+@b(API implementation:)
+@cl:with-package[name="cl-data-structures.dicts.hamt"](
+@cl:doc(function functional-hamt-dictionary-update)
+@cl:doc(function functional-hamt-dictionary-add)
+@cl:doc(function functional-hamt-dictionary-insert)
+@cl:doc(function functional-hamt-dictionary-erase)
+@cl:doc(function hamt-dictionary-at)
+@cl:doc(function mutable-hamt-dictionary-update!)
+@cl:doc(function mutable-hamt-dictionary-insert!)
+@cl:doc(function mutable-hamt-dictionary-add!)
+@cl:doc(function functional-hamt-dictionary-erase!)
+)
 
 @end(section)
 

@@ -70,6 +70,7 @@ Constructs and returns new functional-hamt-dictionary object.
 
 (-> hamt-dictionary-at (hamt-dictionary t) (values t boolean))
 (defun hamt-dictionary-at (container location)
+  "Implementation of AT"
   (with-hash-tree-functions container
     (multiple-value-bind (r f)
         (let* ((hash (hash-fn location))
@@ -85,12 +86,10 @@ Constructs and returns new functional-hamt-dictionary object.
               f))))
 
 
-(defmethod cl-ds:at ((container hamt-dictionary) location)
-  (hamt-dictionary-at container location))
-
-
-(-> functional-hamt-dictionary-erase (functional-hamt-dictionary t) (values functional-hamt-dictionary boolean))
+(-> functional-hamt-dictionary-erase (functional-hamt-dictionary t)
+    (values functional-hamt-dictionary boolean))
 (defun functional-hamt-dictionary-erase (container location)
+  "Implementation of ERASE"
   (let ((old-value nil))
     (with-hash-tree-functions container
       (multiple-value-bind (new-root removed)
@@ -118,11 +117,10 @@ Constructs and returns new functional-hamt-dictionary object.
                 old-value)))))
 
 
-(defmethod cl-ds:erase ((container functional-hamt-dictionary) location)
-  (functional-hamt-dictionary-erase container location))
-
-
+(-> functional-hamt-dictionary-insert (functional-hamt-dictionary t t)
+    (values functional-hamt-dictionary boolean t))
 (defun functional-hamt-dictionary-insert (container location new-value)
+  "Implementation of INSERT"
   (let ((old nil)
         (rep nil))
     (with-hash-tree-functions container
@@ -150,11 +148,10 @@ Constructs and returns new functional-hamt-dictionary object.
                 old)))))
 
 
-(defmethod cl-ds:insert ((container functional-hamt-dictionary) location new-value)
-  (functional-hamt-dictionary-insert container location new-value))
-
-
+(-> functional-hamt-dictionary-insert! (functional-hamt-dictionary t t)
+    (values functional-hamt-dictionary boolean t))
 (defun mutable-hamt-dictionary-insert! (container location new-value)
+  "Implementation of (SETF AT)"
   (let ((replaced nil)
         (old-value nil))
     (flet ((destructive-insert (node)
@@ -218,11 +215,10 @@ Constructs and returns new functional-hamt-dictionary object.
                   old-value))))))
 
 
-(defmethod (setf cl-ds:at) (new-value (container mutable-hamt-dictionary) location)
-  (mutable-hamt-dictionary-insert! container location new-value))
-
-
+(-> functional-hamt-dictionary-update (functional-hamt-dictionary t t)
+    (values functional-hamt-dictionary boolean t))
 (defun functional-hamt-dictionary-update (container location new-value)
+  "Implementation of UPDATE"
   (let ((old nil)
         (up nil))
     (with-hash-tree-functions container
@@ -254,10 +250,12 @@ Constructs and returns new functional-hamt-dictionary object.
                 up
                 old)))))
 
-
+(-> functional-hamt-dictionary-add (functional-hamt-dictionary t t)
+    (values functional-hamt-dictionary boolean t))
 (defun functional-hamt-dictionary-add (container location new-value)
+  "Implementation of ADD"
   (let ((add nil)
-        (old-value nil))
+        (existing-value nil))
     (with-hash-tree-functions container
       (let ((result (modify-copy-hamt (access-root container)
                                       (hash-fn location)
@@ -268,7 +266,7 @@ Constructs and returns new functional-hamt-dictionary object.
                                                            :key #'car
                                                            :test (read-equal-fn container))))
                                           (setf add (not item)
-                                                old-value (cdr item))
+                                                existing-value (cdr item))
                                           (if item
                                               (values bottom nil)
                                               (values (make-conflict-node (cons (list* location new-value)
@@ -283,18 +281,13 @@ Constructs and returns new functional-hamt-dictionary object.
                                    :size (1+ (access-size container)))
                     container)
                 add
-                old-value)))))
+                existing-value)))))
 
 
-(defmethod cl-ds:update ((container functional-hamt-dictionary) location new-value)
-  (functional-hamt-dictionary-update container location new-value))
-
-
-(defmethod cl-ds:add ((container functional-hamt-dictionary) location new-value)
-  (functional-hamt-dictionary-add container location new-value))
-
-
+(-> mutable-hamt-dictionary-update! (functional-hamt-dictionary t t)
+    (values functional-hamt-dictionary boolean t))
 (defun mutable-hamt-dictionary-update! (container location new-value)
+  "Implementation of UPDATE!"
   (with-hash-tree-functions container
     (multiple-value-bind (r f)
         (let* ((hash (hash-fn location))
@@ -312,9 +305,41 @@ Constructs and returns new functional-hamt-dictionary object.
         (values container f old-value)))))
 
 
+#|
+
+Methods. Those will just call non generic functions.
+
+|#
+
+
 (defmethod cl-ds:update! ((container mutable-hamt-dictionary) location new-value)
   (mutable-hamt-dictionary-update! container location new-value))
 
 
 (defmethod cl-ds:size ((container hamt-dictionary))
   (access-size container))
+
+
+(defmethod cl-ds:at ((container hamt-dictionary) location)
+  (hamt-dictionary-at container location))
+
+
+(defmethod cl-ds:update ((container functional-hamt-dictionary) location new-value)
+  (functional-hamt-dictionary-update container location new-value))
+
+
+(defmethod cl-ds:add ((container functional-hamt-dictionary) location new-value)
+  (functional-hamt-dictionary-add container location new-value))
+
+
+(defmethod (setf cl-ds:at) (new-value (container mutable-hamt-dictionary) location)
+  (mutable-hamt-dictionary-insert! container location new-value))
+
+
+(defmethod cl-ds:insert ((container functional-hamt-dictionary) location new-value)
+  (functional-hamt-dictionary-insert container location new-value))
+
+
+(defmethod cl-ds:erase ((container functional-hamt-dictionary) location)
+  (functional-hamt-dictionary-erase container location))
+

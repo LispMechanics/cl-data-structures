@@ -26,7 +26,12 @@
 
 
 (defgeneric add! (container location new-value)
-  (:documentation "@b(Mutable API:) Destructively insert NEW-VALUE into CONTAINER at LOCATION. Will return two values: first one is the modified CONTAINER, second one is boolean informing if insert took place "))
+  (:documentation "@b(Mutable API:) Destructively insert NEW-VALUE into CONTAINER at LOCATION. Will @b(return) two values:
+  @begin(list)
+  @item(first -- is the modified CONTAINER)
+  @item(second -- boolean informing if insert took place)
+  @end(list)
+  @b(Side effencts:) If insert took place, destructivly transform CONTAINER."))
 
 
 (defgeneric insert (container location new-value)

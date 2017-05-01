@@ -70,6 +70,15 @@
            (is a t)
            (is (1+ (size dict)) (size v))
            (setf dict v)))
+       (iterate
+         (for s from ,limit)
+         (repeat ,limit)
+         (while (< s (fill-pointer *all-words*)))
+         (for word = (aref *all-words* s))
+         (multiple-value-bind (v a) (add dict word s)
+           (is a nil)
+           (is (size dict) (size v))
+           (setf dict v)))
        (diag "Testing erase")
        (iterate
          (for s from 1 below ,limit)
@@ -91,7 +100,7 @@
 
 
 (defun run-suite ()
-  (plan 21)
+  (plan 25)
   (insert-every-word (cl-ds.dicts.hamt:make-functional-hamt-dictionary #'sxhash #'string=) 2)
   (finalize))
 
