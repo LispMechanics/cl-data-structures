@@ -2,5 +2,5 @@
 
 
 (defclass dictionary () ()
-  (:documentation "Map key to value."))
+  (:documentation "Map location to value."))
 

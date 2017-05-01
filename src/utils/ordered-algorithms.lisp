@@ -2,7 +2,6 @@
 
 (-> merge-ordered-vectors (symbol (-> (t t) boolean) &rest vector) vector)
 (defun merge-ordered-vectors (result-type compare-fn &rest vectors)
-  (assert (every (rcurry #'is-ordered compare-fn) vectors))
   (let* ((result (make-array 0
                              :adjustable t
                              :element-type result-type
