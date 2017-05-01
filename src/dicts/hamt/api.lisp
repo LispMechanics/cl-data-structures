@@ -255,8 +255,41 @@ Constructs and returns new functional-hamt-dictionary object.
                 old)))))
 
 
+(defun functional-hamt-dictionary-add (container location new-value)
+  (let ((add nil))
+    (with-hash-tree-functions container
+      (let ((result (modify-copy-hamt (access-root container)
+                                      (hash-fn location)
+                                      container
+                                      (lambda (bottom)
+                                        (multiple-value-bind (next-list replaced)
+                                            (insert-or-replace (and bottom (access-conflict bottom))
+                                                               (list* location new-value)
+                                                               :test (read-equal-fn container)
+                                                               :list-key #'car
+                                                               :item-key #'car)
+                                          (setf add (not replaced))
+                                          (if replaced
+                                              (values bottom nil)
+                                              (values (make-conflict-node next-list)
+                                                      t)))))))
+        (values (if add
+                    (make-instance (type-of container)
+                                   :equal-fn (read-equal-fn container)
+                                   :hash-fn (read-hash-fn container)
+                                   :root result
+                                   :max-depth (read-max-depth container)
+                                   :size (access-size container))
+                    container)
+                add)))))
+
+
 (defmethod cl-ds:update ((container functional-hamt-dictionary) location new-value)
   (functional-hamt-dictionary-update container location new-value))
+
+
+(defmethod cl-ds:add ((container functional-hamt-dictionary) location new-value)
+  (functional-hamt-dictionary-add container location new-value))
 
 
 (defun mutable-hamt-dictionary-update! (container location new-value)
