@@ -2,7 +2,7 @@
 
 
 (defmacro lazy-let (bindings &body body)
-  "Like LET but bind variable only once it is accessed"
+  "Like LET but bind variable only once it is accessed. Does that by replacing calls to variable by calls to local function so variables are not seen by introspecting lexical enviorement."
   (flet ((gensym-list (x) (list (car x) (gensym) (cadr x) (caddr x) (gensym)))
          (make-let-list (x) `(,(cadr x) ',(cadr x)))
          (make-macro-list (x) (destructuring-bind (symbol var form rec init) x

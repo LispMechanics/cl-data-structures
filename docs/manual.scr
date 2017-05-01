@@ -83,7 +83,6 @@ To achieve this goals, package cl-data-structures contains common api and variou
 
 @begin(section)
  @title(Utility functions)
-
  Although implementing those is not in the scope of the project, it was sometimes required. Usually used by internals of implementations. In the package cl-ds.utils:
 
     @cl:with-package[name="cl-data-structures.utils"](
@@ -98,5 +97,18 @@ To achieve this goals, package cl-data-structures contains common api and variou
      @cl:doc(function merge-ordered-vectors)
      @cl:doc(function ordered-p)
     )
+
+@end(section)
+
+@begin(section)
+ @title(Utility macros)
+ Macros used for implementation of data structures.
+ @cl:with-package[name="cl-data-structures.utils"](
+  @cl:doc(macro with-vectors)
+  @cl:doc(macro bind-lambda)
+  @cl:doc(macro lazy-let)
+  @cl:doc(macro cond+)
+ )
+ 
 
 @end(section)

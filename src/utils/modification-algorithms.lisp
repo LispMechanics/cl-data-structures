@@ -32,7 +32,7 @@
 
 (-> swapop (extendable-vector index) vector)
 (defun swapop (vector index)
-  "Swaps element under INDEX with last element. Pops last element and returns VECTOR.
+  "Swaps element under INDEX with last element of VECTOR. Pops last element and returns VECTOR.
 
    @b(Values and parameters:)
    @begin(list)
