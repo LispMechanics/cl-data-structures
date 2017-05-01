@@ -74,7 +74,7 @@ Macros
      @item(break-on-absent -- control behavior when node is not present in the hamt. Either break and return, or go into filling indexes with positions where nodes should be until reaching maximal depth.)
    @end(list)"
   (once-only (max-depth)
-    `(let ((path (make-array 10))
+    `(let ((path (make-array 11))
            (indexes (make-array ,max-depth :element-type 'fixnum))
            (depth 0))
        (declare (type fixnum depth)

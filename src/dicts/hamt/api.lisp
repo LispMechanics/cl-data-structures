@@ -16,17 +16,18 @@
                                      &key (:max-depth (integer 1 11)))
     functional-hamt-dictionary)
 (defun make-functional-hamt-dictionary (hash-fn equal-fn &key (max-depth 8))
-"
-@b(Arguments and Values:)
+  "@b(Arguments and Values:)
+   @begin(list)
+   @item(hash-fn -- function that will be used to hash keys. Should return fixnum and follow all rules of hashing.)
+   @item(equal-fn -- function that will be used to resolve hash conflicts.)
+   @item(max-depth -- how many levels this hamt can have at most?)
+   @end(list)
 
-@begin(list)
-@item(hash-fn -- function that will be used to hash keys. Should return fixnum.)
-@item(equal-fn -- function that will be used to resolve hash conflicts.)
-@end(list)
+   @b(Description:)
+   Constructs and returns new functional-hamt-dictionary object.
 
-@b(Description:)
-Constructs and returns new functional-hamt-dictionary object.
-"
+   @b(Notes:)
+   In theory, HAMT can use infinite length of HASH, but this implementation uses 60 oldest bits at most."
   (assert (<= max-depth 10))
   (assert (> max-depth 0))
   (assure functional-hamt-dictionary (make-instance 'functional-hamt-dictionary
@@ -36,7 +37,25 @@ Constructs and returns new functional-hamt-dictionary object.
                                                     :equal-fn equal-fn)))
 
 
+(-> make-mutable-hamt-dictionary ((-> (t) fixnum)
+                                  (-> (t t) boolean)
+                                  &key (:max-depth (integer 1 11)))
+    functional-hamt-dictionary)
 (defun make-mutable-hamt-dictionary (hash-fn equal-fn &key (max-depth 8))
+  "@b(Arguments and Values:)
+   @begin(list)
+   @item(hash-fn -- function that will be used to hash keys. Should return fixnum and follow all rules of hashing.)
+   @item(equal-fn -- function that will be used to resolve hash conflicts.)
+   @item(max-depth -- how many levels this hamt can have at most?)
+   @end(list)
+
+   @b(Description:)
+   Constructs and returns new mutable-hamt-dictionary object.
+
+   @b(Notes:)
+   In theory, HAMT can use infinite length of HASH, but this implementation uses 60 oldest bits at most."
+  (assert (<= max-depth 10))
+  (assert (> max-depth 0))
   (assure mutable-hamt-dictionary (make-instance 'mutable-hamt-dictionary
                                                  :equal-fn equal-fn
                                                  :hash-fn hash-fn
