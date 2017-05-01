@@ -15,6 +15,7 @@
    :cond-compare
    :insert-or-replace
    :try-find
+   :ordered-p
    :try-find-cell
    :try-remove))
 

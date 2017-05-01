@@ -4,7 +4,9 @@
 (-> insert-or-replace (list t &key (:test (-> (t t) boolean)) (:list-key (-> (t) t)) (:item-key (-> (t) t)) (:preserve-order boolean))
     (values list boolean t))
 (defun insert-or-replace (list element &key (test #'eql) (list-key #'identity) (item-key #'identity) (preserve-order nil))
-  "Insert element into set if it is not already here. Returns three values:
+  "Insert element into set if it is not already here.
+
+   @b(Returns three values:)
    @begin(list)
     @item(first -- new list)
     @item(second -- was any item replaced?)
@@ -42,7 +44,9 @@
 (-> try-remove (t list &key (:test (-> (t t) boolean)) (:key (-> (t) t)) (:preserve-order boolean))
     (values list boolean t))
 (defun try-remove (item list &key (test #'eql) (key #'identity) (preserve-order nil))
-  "Try to remove first item matching from the list. Returns three values:
+  "Try to remove first item matching from the list.
+
+   @b(Returns three values:)
    @begin(list)
     @item(first -- new list)
     @item(second -- did anything was removed?)
@@ -74,7 +78,7 @@
 
 (-> try-find-cell (t list &key (:test (-> (t t) boolean)) (:key (-> (t) t))) list)
 (defun try-find-cell (item list &key (test #'eql) (key #'identity))
-  "Returns first matching sublist"
+  "@b(Returns) first matching sublist"
   (iterate
     (for elt on list)
     (when (funcall test
@@ -85,7 +89,7 @@
 
 (-> try-find-cell (t list &key (:test (-> (t t) boolean)) (:key (-> (t) t))) (values t boolean))
 (defun try-find (item list &key (test #'eql) (key #'identity))
-  "Returns first matching elements as first value and boolean telling if it was found as second"
+  "@b(Returns) first matching elements as first value and boolean telling if it was found as second"
   (let ((r (try-find-cell item list :test test :key key)))
     (values (car r)
             (not (null r)))))

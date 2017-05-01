@@ -38,16 +38,30 @@ To achieve this goals, package cl-data-structures contains common api and variou
    @end(section)
 
    @begin(section)
-    @title(API generic functions)
+    @title(Common API generic functions)
     @cl:with-package[name="cl-data-structures"](
      @cl:doc(generic at)
+     @cl:doc(generic size)
+     @cl:doc(generic become-functional)
+     @cl:doc(generic become-mutable)
+    )
+   @end(section)
+
+   @begin(section)
+    @title(Functional API generic functions)
+    @cl:with-package[name="cl-data-structures"](
      @cl:doc(generic add)
-     @cl:doc(generic add!)
      @cl:doc(generic insert)
      @cl:doc(generic erase)
-     @cl:doc(generic erase!)
-     @cl:doc(generic size)
      @cl:doc(generic update)
+    )
+   @end(section)
+
+   @begin(section)
+    @title(Mutable API generic functions)
+    @cl:with-package[name="cl-data-structures"](
+     @cl:doc(generic add!)
+     @cl:doc(generic erase!)
      @cl:doc(generic update!)
     )
    @end(section)
@@ -64,5 +78,25 @@ To achieve this goals, package cl-data-structures contains common api and variou
 
   @end(section)
 
+
+@end(section)
+
+@begin(section)
+ @title(Utility functions)
+
+ Although implementing those is not in the scope of the project, it was sometimes required. Usually used by internals of implementations. In the package cl-ds.utils:
+
+    @cl:with-package[name="cl-data-structures.utils"](
+     @cl:doc(function insert-or-replace)
+     @cl:doc(function try-remove)
+     @cl:doc(function try-find-cell)
+     @cl:doc(function try-find)
+     @cl:doc(function swapop)
+     @cl:doc(function pop-last)
+     @cl:doc(function erase-from-vector)
+     @cl:doc(function erase-from-vector)
+     @cl:doc(function merge-ordered-vectors)
+     @cl:doc(function ordered-p)
+    )
 
 @end(section)
