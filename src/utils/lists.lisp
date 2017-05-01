@@ -1,6 +1,8 @@
 (in-package :cl-data-structures.utils)
 
 
+(-> insert-or-replace (list t &key (:test (-> (t t) boolean)) (:list-key (-> (t) t)) (:item-key (-> (t) t)) (:preserve-order boolean))
+    list)
 (defun insert-or-replace (list element &key (test #'eql) (list-key #'identity) (item-key #'identity) (preserve-order nil))
   "Insert element into set if it is not already here. Returns three values:
    @begin(list)
