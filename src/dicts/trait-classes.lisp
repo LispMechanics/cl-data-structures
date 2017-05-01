@@ -2,5 +2,5 @@
 
 
 (defclass dictionary () ()
-  (:documentation "Map location to value."))
+  (:documentation "Container that provides location to value mapping. Either ordered or unordered."))
 

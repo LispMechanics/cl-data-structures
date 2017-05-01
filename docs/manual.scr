@@ -48,6 +48,7 @@ In addition to the classes above cl-data-structures also implements more specifi
 @cl:with-package[name="cl-data-structures"](
 @cl:doc(generic at)
 @cl:doc(generic size)
+@cl:doc(generic empty)
 @cl:doc(generic become-functional)
 @cl:doc(generic become-mutable)
 )
