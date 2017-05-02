@@ -10,28 +10,20 @@
   :serial T
   :pathname "src"
   :components ((:file "package")
-               (:module api
-                :pathname "api"
-                :serial T
+               (:module "api"
                 :components ((:file "trait-classes")
                              (:file "generics")
                              (:file "conditions")))
-               (:module utils
-                :pathname "utils"
-                :serial T
+               (:module "utils"
                 :components ((:file "package")
                              (:file "macros")
                              (:file "types")
                              (:file "ordered-algorithms")
                              (:file "lists")
                              (:file "modification-algorithms")))
-               (:module dicts
-                :pathname "dicts"
-                :serial T
+               (:module "dicts"
                 :components ((:file "packages")
                              (:file "trait-classes")
-                             (:module hamt
-                              :pathname "hamt"
-                              :serial T
+                             (:module "hamt"
                               :components ((:file "internal")
                                            (:file "api")))))))
