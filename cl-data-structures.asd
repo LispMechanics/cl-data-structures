@@ -8,15 +8,16 @@
   :maintainer "Lisp Mechanics"
   :depends-on (:iterate :alexandria :serapeum :prove)
   :serial T
+  :pathname "src"
   :components ((:file "package")
                (:module api
-                :pathname "src/api"
+                :pathname "api"
                 :serial T
                 :components ((:file "trait-classes")
                              (:file "generics")
                              (:file "conditions")))
                (:module utils
-                :pathname "src/utils"
+                :pathname "utils"
                 :serial T
                 :components ((:file "package")
                              (:file "macros")
@@ -25,9 +26,12 @@
                              (:file "lists")
                              (:file "modification-algorithms")))
                (:module dicts
-                :pathname "src/dicts"
+                :pathname "dicts"
                 :serial T
                 :components ((:file "packages")
                              (:file "trait-classes")
-                             (:file "hamt/internal")
-                             (:file "hamt/api")))))
+                             (:module hamt
+                              :pathname "hamt"
+                              :serial T
+                              :components ((:file "internal")
+                                           (:file "api")))))))
