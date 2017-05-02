@@ -100,7 +100,7 @@
   (:documentation "Will @b(return) T if CONTAINER exposes functional API."))
 
 
-(defgeneric empty (container)
+(defgeneric empty-p (container)
   (:method ((container fundamental-container)) (zerop (size container)))
   (:documentation "@b(Returns) T if container is empty and @b(returns) NIL if there is something in it. All containers start as empty
 
