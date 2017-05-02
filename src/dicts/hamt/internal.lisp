@@ -71,7 +71,8 @@ Macros
    @begin(list)
      @item(root -- node where we are starting descending)
      @item(max-depth -- how many nodes we are going to scan at most? @b(Must) be lower than 11).
-     @item(break-on-absent -- control behavior when node is not present in the hamt. Either break and return, or go into filling indexes with positions where nodes should be until reaching maximal depth.)
+     @item(hash -- fixnum).
+     @item(final-fn -- symbol bound to function. Will ).
    @end(list)"
   (once-only (max-depth)
     `(let ((path (make-array 11))
@@ -349,9 +350,7 @@ Copy nodes and stuff.
                                        (unless changed
                                          (return-from modify-copy-hamt (values root nil)))
                                        (if (or (null bottom-node-or-nil)
-                                               (null conflict)
-                                               (eql length (1- (the fixnum (read-max-depth container))))
-                                               (single-elementp conflict))
+                                               (null conflict))
                                            ;;if we didn't find element or element was found but depth was already maximal,
                                            ;;we will just return element, otherwise attempt to divide (rehash) conflicting node into few more
                                            conflict
