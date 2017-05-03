@@ -89,20 +89,20 @@
 
 (-> hamt-dictionary-at (hamt-dictionary t) (values t boolean))
 (defun hamt-dictionary-at (container location)
+  (declare (optimize (debug 3)))
   "Implementation of AT"
   (with-hash-tree-functions container
-    (multiple-value-bind (r f)
-        (let* ((hash (hash-fn location))
-               (root (access-root container))
-               (node (hash-do (node index) (root hash))))
-          (if (typep node 'bottom-node)
-              (try-find location
-                        (access-conflict node)
-                        :test (read-equal-fn container)
-                        :key #'car)
-            (values nil nil)))
-      (values (cdr r)
-              f))))
+    (let* ((hash (hash-fn location))
+           (root (access-root container)))
+      (hash-do
+          (node index  c
+                (multiple-value-bind (r f) (try-find location
+                                                     (access-conflict node)
+                                                     :test (read-equal-fn container)
+                                                     :key #'car)
+                  (values (cdr r) f))
+                (values nil nil))
+          (root hash)))))
 
 
 (-> functional-hamt-dictionary-erase (functional-hamt-dictionary t)
