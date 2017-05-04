@@ -3,7 +3,8 @@
   (:use :cl :prove :serapeum :cl-ds :iterate :alexandria)
   (:shadowing-import-from :iterate :collecting :summing :in)
   (:export :run-stress-test
-           :run-suite))
+   :run-suite
+   :test-destructive-insert))
 (in-package :functional-dictionary-test-suite)
 
 (setf prove:*enable-colors* nil)
@@ -103,5 +104,19 @@
   (plan 25)
   (insert-every-word (cl-ds.dicts.hamt:make-functional-hamt-dictionary #'sxhash #'string=) 2)
   (finalize))
+
+
+(defun test-destructive-insert (limit)
+  (let ((hamt (cl-ds.dicts.hamt:make-mutable-hamt-dictionary #'sxhash #'string=)))
+    (iterate
+      (for word in-vector *all-words*)
+      (for i from 1 below limit)
+      (setf (at hamt word) word)
+      (is (size hamt) i)
+      (is (at hamt word) word :test #'string=))
+    (iterate
+      (for word in-vector *all-words*)
+      (for i from 1 below limit)
+      (is (at hamt word) word :test #'string=))))
 
 
