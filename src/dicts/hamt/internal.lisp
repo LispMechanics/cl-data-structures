@@ -41,8 +41,7 @@ Macros
               (,count 0 (1+ ,count))
               (,!leaf (and ,root (not (hash-node-p ,root)))
                       (hash-node-contains-leaf ,node ,index))
-              (,node ,root (and (hash-node-p ,node)
-                                (hash-node-contains ,node ,index)
+              (,node ,root (and (hash-node-contains ,node ,index)
                                 (hash-node-access ,node ,index))))
              ((= ,count ,max-depth)
               (values ,node
